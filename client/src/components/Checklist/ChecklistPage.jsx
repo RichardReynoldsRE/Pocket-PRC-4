@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { FileEdit, Clock, CheckCircle } from 'lucide-react';
 import useChecklist from '../../hooks/useChecklist';
 import * as checklistsApi from '../../api/checklists';
 import { saveChecklist as saveToIdb } from '../../lib/db';
@@ -22,6 +23,7 @@ export default function ChecklistPage() {
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [status, setStatus] = useState('draft');
   const [generatedPdfBlob, setGeneratedPdfBlob] = useState(null);
   const [suggestedFilename, setSuggestedFilename] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
@@ -40,6 +42,7 @@ export default function ChecklistPage() {
       .then((data) => {
         const record = data.checklist || data;
         loadChecklist(record.form_data || record);
+        setStatus(record.status || 'draft');
         setLoadFailed(false);
       })
       .catch(() => {
@@ -179,6 +182,18 @@ export default function ChecklistPage() {
     }
   };
 
+  const handleStatusChange = async (newStatus) => {
+    if (!id || newStatus === status) return;
+    try {
+      await checklistsApi.updateStatus(id, newStatus);
+      setStatus(newStatus);
+      const labels = { draft: 'Draft', in_progress: 'In Progress', completed: 'Completed' };
+      showToast(`Marked as ${labels[newStatus]}`, 'success');
+    } catch {
+      showToast('Failed to update status', 'error');
+    }
+  };
+
   const handleGeneratePdf = async () => {
     showToast('Generating PDF...', 'success');
     try {
@@ -202,8 +217,41 @@ export default function ChecklistPage() {
 
   if (loading) return <LoadingSpinner />;
 
+  const STATUS_OPTIONS = [
+    { value: 'draft', label: 'Draft', icon: FileEdit, color: 'gray' },
+    { value: 'in_progress', label: 'In Progress', icon: Clock, color: 'yellow' },
+    { value: 'completed', label: 'Completed', icon: CheckCircle, color: 'green' },
+  ];
+
   return (
     <div className="max-w-2xl mx-auto p-3 sm:p-4">
+      {id && (
+        <div className="bg-white rounded-lg shadow p-3 mb-3 sm:mb-4">
+          <div className="flex gap-2">
+            {STATUS_OPTIONS.map(({ value, label, icon: Icon, color }) => {
+              const isActive = status === value;
+              const base = `flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-semibold transition-all`;
+              const active = {
+                gray: 'bg-gray-700 text-white',
+                yellow: 'bg-yellow-500 text-white',
+                green: 'bg-green-600 text-white',
+              };
+              const inactive = 'bg-gray-100 text-gray-500 hover:bg-gray-200';
+              return (
+                <button
+                  key={value}
+                  onClick={() => handleStatusChange(value)}
+                  className={`${base} ${isActive ? active[color] : inactive}`}
+                >
+                  <Icon size={16} />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <PropertyAddress formData={formData} handleChange={handleChange} />
       <AssessorSection
         formData={formData}

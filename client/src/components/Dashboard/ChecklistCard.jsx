@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Calendar, User } from 'lucide-react';
+import * as checklistsApi from '../../api/checklists';
 
 const STATUS_STYLES = {
   draft: 'bg-gray-100 text-gray-700',
@@ -13,7 +14,7 @@ const STATUS_LABELS = {
   completed: 'Completed',
 };
 
-export default function ChecklistCard({ checklist }) {
+export default function ChecklistCard({ checklist, onStatusChange }) {
   const navigate = useNavigate();
 
   const status = checklist.status || 'draft';
@@ -21,6 +22,19 @@ export default function ChecklistCard({ checklist }) {
   const date = checklist.updated_at || checklist.created_at;
   const formattedDate = date ? new Date(date).toLocaleDateString() : '';
   const agentName = checklist.assigned_user_name || checklist.completedBy || '';
+
+  const handleStatusClick = async (e) => {
+    e.stopPropagation();
+    const order = ['draft', 'in_progress', 'completed'];
+    const nextIndex = (order.indexOf(status) + 1) % order.length;
+    const newStatus = order[nextIndex];
+    try {
+      await checklistsApi.updateStatus(checklist.id, newStatus);
+      if (onStatusChange) onStatusChange(checklist.id, newStatus);
+    } catch {
+      // silent fail — user can retry
+    }
+  };
 
   return (
     <button
@@ -47,7 +61,9 @@ export default function ChecklistCard({ checklist }) {
           </div>
         </div>
         <span
-          className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${STATUS_STYLES[status] || STATUS_STYLES.draft}`}
+          onClick={handleStatusClick}
+          title="Click to change status"
+          className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all ${STATUS_STYLES[status] || STATUS_STYLES.draft}`}
         >
           {STATUS_LABELS[status] || status}
         </span>

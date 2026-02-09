@@ -20,6 +20,12 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleStatusChange = (checklistId, newStatus) => {
+    setChecklists((prev) =>
+      prev.map((c) => (c.id === checklistId ? { ...c, status: newStatus } : c))
+    );
+  };
+
   const drafts = checklists.filter((c) => c.status === 'draft').length;
   const completed = checklists.filter((c) => c.status === 'completed').length;
 
@@ -67,7 +73,7 @@ export default function DashboardPage() {
       ) : (
         <div className="space-y-3">
           {checklists.map((checklist) => (
-            <ChecklistCard key={checklist.id} checklist={checklist} />
+            <ChecklistCard key={checklist.id} checklist={checklist} onStatusChange={handleStatusChange} />
           ))}
         </div>
       )}
