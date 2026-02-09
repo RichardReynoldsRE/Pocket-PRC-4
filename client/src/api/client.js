@@ -1,4 +1,12 @@
-const BASE_URL = import.meta.env.VITE_API_URL || '';
+import { Capacitor } from '@capacitor/core';
+
+const API_HOST = 'https://pocket-prc-app-production.up.railway.app';
+
+// On native platforms (Android/iOS), always use the production API.
+// On web, use relative URLs so the Vite dev proxy works, or the same-origin in production.
+const BASE_URL = Capacitor.isNativePlatform()
+  ? API_HOST
+  : (import.meta.env.VITE_API_URL || '');
 
 async function request(url, options = {}) {
   const token = localStorage.getItem('token');

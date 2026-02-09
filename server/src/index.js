@@ -25,9 +25,19 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 3001;
 
-// Middleware
+// Middleware - allow Capacitor native origins (https://localhost, capacitor://localhost)
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',');
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    // Allow wildcard
+    if (allowedOrigins.includes('*')) return callback(null, true);
+    // Allow Capacitor origins
+    if (origin.includes('localhost') || origin.includes('capacitor://')) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(null, true); // permissive for now during development
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '50mb' }));
