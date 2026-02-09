@@ -9,5 +9,14 @@
     "start": "cd server && npm start",
     "install:all": "cd client && npm install && cd ../server && npm install",
     "migrate": "cd server && npm run migrate"
+  },
+  "dependencies": {
+    "@capacitor/camera": "^6.1.3",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/filesystem": "^6.0.4",
+    "@capacitor/network": "^6.0.4",
+    "@capacitor/preferences": "^6.0.4",
+    "@capacitor/share": "^6.0.4"
   }
 }
