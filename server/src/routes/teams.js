@@ -14,7 +14,7 @@ router.get('/', async (req, res, next) => {
     const { userId, role } = req.user;
 
     let result;
-    if (role === 'admin') {
+    if (role === 'owner') {
       result = await query(
         `SELECT t.*, COUNT(u.id)::int AS member_count
          FROM teams t LEFT JOIN users u ON u.team_id = t.id AND u.is_active = true
@@ -60,9 +60,9 @@ router.post('/', async (req, res, next) => {
 
     const team = result.rows[0];
 
-    // Set creator as team_lead on this team
+    // Set creator as owner on this team
     await query(
-      `UPDATE users SET team_id = $1, role = 'team_lead', updated_at = NOW() WHERE id = $2`,
+      `UPDATE users SET team_id = $1, role = 'owner', updated_at = NOW() WHERE id = $2`,
       [team.id, userId]
     );
 
@@ -102,11 +102,11 @@ router.put('/:id', async (req, res, next) => {
     const { userId, role } = req.user;
     const { name, brokerageName } = req.body;
 
-    // Verify team_lead of this team or admin
-    if (role !== 'admin') {
+    // Verify owner/team_lead of this team
+    if (role !== 'owner') {
       const userResult = await query('SELECT team_id, role FROM users WHERE id = $1', [userId]);
       const user = userResult.rows[0];
-      if (user.team_id !== id || user.role !== 'team_lead') {
+      if (user.team_id !== id || !['owner', 'team_lead'].includes(user.role)) {
         throw createError('Access denied', 403);
       }
     }
@@ -143,10 +143,10 @@ router.post('/:id/invite', async (req, res, next) => {
     }
 
     // Verify access
-    if (role !== 'admin') {
+    if (role !== 'owner') {
       const userResult = await query('SELECT team_id, role FROM users WHERE id = $1', [userId]);
       const user = userResult.rows[0];
-      if (user.team_id !== id || user.role !== 'team_lead') {
+      if (user.team_id !== id || !['owner', 'team_lead'].includes(user.role)) {
         throw createError('Access denied', 403);
       }
     }
@@ -204,10 +204,10 @@ router.delete('/:id/members/:memberId', async (req, res, next) => {
     const { id, memberId } = req.params;
     const { userId, role } = req.user;
 
-    if (role !== 'admin') {
+    if (role !== 'owner') {
       const userResult = await query('SELECT team_id, role FROM users WHERE id = $1', [userId]);
       const user = userResult.rows[0];
-      if (user.team_id !== id || user.role !== 'team_lead') {
+      if (user.team_id !== id || !['owner', 'team_lead'].includes(user.role)) {
         throw createError('Access denied', 403);
       }
     }
@@ -233,23 +233,33 @@ router.delete('/:id/members/:memberId', async (req, res, next) => {
 });
 
 // PUT /:id/members/:userId/role - Change member role
-router.put('/:id/members/:memberId/role', requireRole('admin'), async (req, res, next) => {
+router.put('/:id/members/:memberId/role', async (req, res, next) => {
   try {
-    const { memberId } = req.params;
+    const { id, memberId } = req.params;
+    const { userId, role: callerRole } = req.user;
     const { role } = req.body;
 
-    const validRoles = ['admin', 'team_lead', 'agent'];
+    // Verify caller is owner or team_lead of this team
+    if (callerRole !== 'owner') {
+      const userResult = await query('SELECT team_id, role FROM users WHERE id = $1', [userId]);
+      const user = userResult.rows[0];
+      if (user.team_id !== id || !['owner', 'team_lead'].includes(user.role)) {
+        throw createError('Access denied', 403);
+      }
+    }
+
+    const validRoles = ['owner', 'team_lead', 'agent', 'transaction_coordinator', 'isa'];
     if (!role || !validRoles.includes(role)) {
       throw createError('Invalid role', 400);
     }
 
     const result = await query(
-      `UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, email, role`,
-      [role, memberId]
+      `UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2 AND team_id = $3 RETURNING id, name, email, role`,
+      [role, memberId, id]
     );
 
     if (result.rows.length === 0) {
-      throw createError('User not found', 404);
+      throw createError('User not found in this team', 404);
     }
 
     res.json({ user: result.rows[0] });

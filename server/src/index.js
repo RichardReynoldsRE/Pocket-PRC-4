@@ -111,9 +111,9 @@ async function createDefaultAdmin() {
       await query(
         `INSERT INTO users (email, password_hash, name, role)
          VALUES ($1, $2, $3, $4)`,
-        ['admin@pocketprc.com', hash, 'Admin', 'admin']
+        ['admin@pocketprc.com', hash, 'Admin', 'owner']
       );
-      console.log('Default admin created: admin@pocketprc.com / admin123');
+      console.log('Default owner created: admin@pocketprc.com / admin123');
     }
   } catch (err) {
     console.error('Failed to create default admin:', err.message);

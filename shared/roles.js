@@ -1,13 +1,17 @@
 export const ROLES = {
-  ADMIN: 'admin',
+  OWNER: 'owner',
   TEAM_LEAD: 'team_lead',
   AGENT: 'agent',
+  TRANSACTION_COORDINATOR: 'transaction_coordinator',
+  ISA: 'isa',
 };
 
 export const ROLE_HIERARCHY = {
-  admin: 3,
-  team_lead: 2,
-  agent: 1,
+  owner: 5,
+  team_lead: 4,
+  agent: 3,
+  transaction_coordinator: 2,
+  isa: 1,
 };
 
 export function hasRole(userRole, requiredRole) {
@@ -15,7 +19,9 @@ export function hasRole(userRole, requiredRole) {
 }
 
 export const ROLE_LABELS = {
-  admin: 'Admin',
+  owner: 'Owner',
   team_lead: 'Team Lead',
   agent: 'Agent',
+  transaction_coordinator: 'Transaction Coordinator',
+  isa: 'ISA',
 };

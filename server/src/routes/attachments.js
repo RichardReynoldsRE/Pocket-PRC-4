@@ -81,7 +81,7 @@ router.get('/:id/download', async (req, res, next) => {
     const attachment = result.rows[0];
 
     // Access check
-    if (role !== 'admin') {
+    if (role !== 'owner') {
       if (
         attachment.owner_id !== userId &&
         attachment.assigned_to !== userId &&
@@ -123,7 +123,7 @@ router.delete('/:id', async (req, res, next) => {
     const attachment = result.rows[0];
 
     // Only uploader or admin can delete
-    if (role !== 'admin' && attachment.uploaded_by !== userId) {
+    if (role !== 'owner' && attachment.uploaded_by !== userId) {
       throw createError('Access denied', 403);
     }
 

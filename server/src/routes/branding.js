@@ -44,7 +44,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// PUT / - Update team branding (team_lead of own team, or admin)
+// PUT / - Update team branding (team_lead of own team, or owner)
 router.put('/', verifyToken, async (req, res, next) => {
   try {
     const { userId, role } = req.user;
@@ -52,7 +52,7 @@ router.put('/', verifyToken, async (req, res, next) => {
 
     // If team_id is provided, verify access
     if (team_id) {
-      if (role !== 'admin') {
+      if (role !== 'owner') {
         const userResult = await query('SELECT team_id, role FROM users WHERE id = $1', [userId]);
         const user = userResult.rows[0];
         if (user.team_id !== team_id || user.role !== 'team_lead') {
@@ -90,9 +90,9 @@ router.put('/', verifyToken, async (req, res, next) => {
       return res.json({ branding: result.rows[0] });
     }
 
-    // No team_id means default branding - admin only
-    if (role !== 'admin') {
-      throw createError('Only admins can update default branding', 403);
+    // No team_id means default branding - owner only
+    if (role !== 'owner') {
+      throw createError('Only owners can update default branding', 403);
     }
 
     const result = await query(

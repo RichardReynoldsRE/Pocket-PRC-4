@@ -32,7 +32,7 @@ router.get('/branding', async (_req, res, next) => {
 });
 
 // All remaining routes require auth + admin
-router.use(verifyToken, requireRole('admin'));
+router.use(verifyToken, requireRole('owner'));
 
 // PUT /branding - Update default branding
 router.put('/branding', async (req, res, next) => {
@@ -100,7 +100,7 @@ router.put('/users/:id', async (req, res, next) => {
     const { userId } = req.user;
 
     // Cannot demote self
-    if (id === userId && role && role !== 'admin') {
+    if (id === userId && role && role !== 'owner') {
       throw createError('Cannot change your own role', 400);
     }
 
@@ -109,7 +109,7 @@ router.put('/users/:id', async (req, res, next) => {
     let paramIndex = 1;
 
     if (role !== undefined) {
-      const validRoles = ['admin', 'team_lead', 'agent'];
+      const validRoles = ['owner', 'team_lead', 'agent', 'transaction_coordinator', 'isa'];
       if (!validRoles.includes(role)) {
         throw createError('Invalid role', 400);
       }

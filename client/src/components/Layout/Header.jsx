@@ -86,7 +86,7 @@ export default function Header() {
                 >
                   <User size={16} /> Profile
                 </button>
-                {user?.role === 'admin' && (
+                {user?.role === 'owner' && (
                   <button
                     onClick={() => { setDropdownOpen(false); navigate('/admin'); }}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"

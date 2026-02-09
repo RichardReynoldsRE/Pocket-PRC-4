@@ -2,15 +2,19 @@ import { useState } from 'react';
 import { Trash2, Shield, User } from 'lucide-react';
 
 const ROLE_STYLES = {
-  admin: 'bg-purple-100 text-purple-800',
+  owner: 'bg-purple-100 text-purple-800',
   team_lead: 'bg-yellow-100 text-yellow-800',
   agent: 'bg-blue-100 text-blue-800',
+  transaction_coordinator: 'bg-teal-100 text-teal-800',
+  isa: 'bg-orange-100 text-orange-800',
 };
 
 const ROLE_LABELS = {
-  admin: 'Admin',
+  owner: 'Owner',
   team_lead: 'Team Lead',
   agent: 'Agent',
+  transaction_coordinator: 'TC',
+  isa: 'ISA',
 };
 
 export default function MemberList({ members, currentUserId, onRemove, onChangeRole }) {
@@ -66,9 +70,11 @@ export default function MemberList({ members, currentUserId, onRemove, onChangeR
                       autoFocus
                       className="text-xs font-medium px-2 py-1 rounded border border-gray-300 bg-white"
                     >
-                      <option value="agent">Agent</option>
+                      <option value="owner">Owner</option>
                       <option value="team_lead">Team Lead</option>
-                      <option value="admin">Admin</option>
+                      <option value="agent">Agent</option>
+                      <option value="transaction_coordinator">Transaction Coordinator</option>
+                      <option value="isa">ISA</option>
                     </select>
                   ) : (
                     <span
@@ -81,22 +87,26 @@ export default function MemberList({ members, currentUserId, onRemove, onChangeR
                   )}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  {!isCurrentUser && (
+                  {!isCurrentUser && (onRemove || onChangeRole) && (
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => setChangingRoleFor(member.id)}
-                        title="Change role"
-                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                      >
-                        <Shield size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleRemoveClick(member)}
-                        title="Remove member"
-                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {onChangeRole && (
+                        <button
+                          onClick={() => setChangingRoleFor(member.id)}
+                          title="Change role"
+                          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                        >
+                          <Shield size={16} />
+                        </button>
+                      )}
+                      {onRemove && (
+                        <button
+                          onClick={() => handleRemoveClick(member)}
+                          title="Remove member"
+                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   )}
                 </td>

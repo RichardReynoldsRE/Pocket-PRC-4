@@ -4,15 +4,19 @@ import * as adminApi from '../../api/admin';
 import StatusToast from '../Shared/StatusToast';
 
 const ROLE_LABELS = {
-  admin: 'Admin',
+  owner: 'Owner',
   team_lead: 'Team Lead',
   agent: 'Agent',
+  transaction_coordinator: 'Transaction Coordinator',
+  isa: 'ISA',
 };
 
 const ROLE_BADGE_STYLES = {
-  admin: 'bg-purple-100 text-purple-800',
+  owner: 'bg-purple-100 text-purple-800',
   team_lead: 'bg-yellow-100 text-yellow-800',
   agent: 'bg-blue-100 text-blue-800',
+  transaction_coordinator: 'bg-teal-100 text-teal-800',
+  isa: 'bg-orange-100 text-orange-800',
 };
 
 export default function UserManagement() {
@@ -151,9 +155,11 @@ export default function UserManagement() {
                       onChange={(e) => handleRoleChange(user.id, e.target.value)}
                       className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
                     >
-                      <option value="admin">Admin</option>
+                      <option value="owner">Owner</option>
                       <option value="team_lead">Team Lead</option>
                       <option value="agent">Agent</option>
+                      <option value="transaction_coordinator">TC</option>
+                      <option value="isa">ISA</option>
                     </select>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700 hidden sm:table-cell">

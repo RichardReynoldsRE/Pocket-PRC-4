@@ -74,10 +74,14 @@ export default function ProfilePage() {
 
   const getRoleBadgeClass = (role) => {
     switch (role) {
-      case 'admin':
+      case 'owner':
         return 'bg-purple-100 text-purple-700';
       case 'team_lead':
         return 'bg-yellow-100 text-yellow-700';
+      case 'transaction_coordinator':
+        return 'bg-teal-100 text-teal-700';
+      case 'isa':
+        return 'bg-orange-100 text-orange-700';
       default:
         return 'bg-blue-100 text-blue-700';
     }
@@ -85,10 +89,14 @@ export default function ProfilePage() {
 
   const getRoleLabel = (role) => {
     switch (role) {
-      case 'admin':
-        return 'Admin';
+      case 'owner':
+        return 'Owner';
       case 'team_lead':
         return 'Team Lead';
+      case 'transaction_coordinator':
+        return 'Transaction Coordinator';
+      case 'isa':
+        return 'ISA';
       default:
         return 'Agent';
     }

@@ -17,7 +17,7 @@ router.get('/', async (req, res, next) => {
     const params = [];
     let paramIndex = 1;
 
-    if (role === 'admin') {
+    if (role === 'owner') {
       sql = 'SELECT c.*, u.name AS owner_name FROM checklists c LEFT JOIN users u ON c.owner_id = u.id';
     } else if (role === 'team_lead') {
       const userResult = await query('SELECT team_id FROM users WHERE id = $1', [userId]);
@@ -110,7 +110,7 @@ router.get('/:id', async (req, res, next) => {
     const checklist = result.rows[0];
 
     // Access check
-    if (role !== 'admin') {
+    if (role !== 'owner') {
       if (checklist.owner_id !== userId && checklist.assigned_to !== userId) {
         if (role === 'team_lead') {
           const userResult = await query('SELECT team_id FROM users WHERE id = $1', [userId]);
@@ -151,7 +151,7 @@ router.put('/:id', async (req, res, next) => {
     const checklist = existing.rows[0];
 
     // Verify ownership or role
-    if (role !== 'admin' && checklist.owner_id !== userId) {
+    if (role !== 'owner' && checklist.owner_id !== userId) {
       if (role === 'team_lead') {
         const userResult = await query('SELECT team_id FROM users WHERE id = $1', [userId]);
         if (userResult.rows[0]?.team_id !== checklist.team_id) {
@@ -203,7 +203,7 @@ router.delete('/:id', async (req, res, next) => {
 
     const checklist = existing.rows[0];
 
-    if (role !== 'admin' && checklist.owner_id !== userId) {
+    if (role !== 'owner' && checklist.owner_id !== userId) {
       throw createError('Access denied', 403);
     }
 
@@ -224,7 +224,7 @@ router.delete('/:id', async (req, res, next) => {
 });
 
 // PUT /:id/assign
-router.put('/:id/assign', requireRole('admin', 'team_lead'), async (req, res, next) => {
+router.put('/:id/assign', requireRole('owner', 'team_lead'), async (req, res, next) => {
   try {
     const { id } = req.params;
     const { userId } = req.body;
