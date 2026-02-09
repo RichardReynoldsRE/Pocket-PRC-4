@@ -1,0 +1,240 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams } from 'react-router-dom';
+import useChecklist from '../../hooks/useChecklist';
+import * as checklistsApi from '../../api/checklists';
+import { saveChecklist as saveToIdb } from '../../lib/db';
+import { generatePRC } from './PdfGenerator';
+import PropertyAddress from './sections/PropertyAddress';
+import AssessorSection from './sections/AssessorSection';
+import CodeEnforcementSection from './sections/CodeEnforcementSection';
+import DocumentsSection from './sections/DocumentsSection';
+import CompletedBySection from './sections/CompletedBySection';
+import AttachmentUpload from './AttachmentUpload';
+import AttachmentGallery from './AttachmentGallery';
+import ChecklistActions from './ChecklistActions';
+import StatusToast from '../Shared/StatusToast';
+import LoadingSpinner from '../Shared/LoadingSpinner';
+
+export default function ChecklistPage() {
+  const { id } = useParams();
+  const { formData, setFormData, handleChange, handleAmountChange, loadChecklist } = useChecklist();
+  const [loading, setLoading] = useState(!!id);
+  const [saving, setSaving] = useState(false);
+  const [generatedPdfBlob, setGeneratedPdfBlob] = useState(null);
+  const [suggestedFilename, setSuggestedFilename] = useState('');
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  const autoSaveTimer = useRef(null);
+
+  const showToast = useCallback((message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: '' }), 4000);
+  }, []);
+
+  // Load existing checklist from API
+  useEffect(() => {
+    if (!id) return;
+    checklistsApi
+      .getById(id)
+      .then((data) => {
+        const record = data.checklist || data;
+        loadChecklist(record.form_data || record);
+      })
+      .catch(() => showToast('Failed to load checklist', 'error'))
+      .finally(() => setLoading(false));
+  }, [id, loadChecklist, showToast]);
+
+  // Generate suggested filename
+  useEffect(() => {
+    const addr = formData.propertyAddress || 'Property';
+    const clean = addr.replace(/[^a-zA-Z0-9]/g, '_');
+    const date = new Date().toISOString().split('T')[0];
+    setSuggestedFilename(`PRC_${clean}_${date}.pdf`);
+  }, [formData.propertyAddress]);
+
+  // Auto-save to IndexedDB on changes (debounced)
+  useEffect(() => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      saveToIdb({ id: id || 'draft', form_data: formData }).catch(() => {});
+    }, 2000);
+    return () => clearTimeout(autoSaveTimer.current);
+  }, [formData, id]);
+
+  // Listen for save/load events from Header
+  useEffect(() => {
+    const handleSaveEvent = () => {
+      const dataStr = JSON.stringify(formData, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      let filename = formData.propertyAddress
+        ? formData.propertyAddress.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        : 'prc_progress';
+      filename = `${filename}_${new Date().toISOString().split('T')[0]}.json`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('Progress saved!', 'success');
+    };
+
+    const handleLoadEvent = (e) => {
+      const data = e.detail;
+      if (data) {
+        if (!data.attachments) data.attachments = [];
+        loadChecklist(data);
+        showToast('Progress loaded!', 'success');
+      }
+    };
+
+    window.addEventListener('prc:save-progress', handleSaveEvent);
+    window.addEventListener('prc:load-progress', handleLoadEvent);
+    return () => {
+      window.removeEventListener('prc:save-progress', handleSaveEvent);
+      window.removeEventListener('prc:load-progress', handleLoadEvent);
+    };
+  }, [formData, loadChecklist, showToast]);
+
+  const handleFileUpload = useCallback(
+    (event) => {
+      const files = Array.from(event.target.files);
+      let processed = 0;
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setFormData((prev) => ({
+            ...prev,
+            attachments: [
+              ...prev.attachments,
+              { name: file.name, data: e.target.result, type: file.type, size: file.size },
+            ],
+          }));
+          processed++;
+          if (processed === files.length) {
+            showToast(`Added ${files.length} file(s)`, 'success');
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    },
+    [setFormData, showToast]
+  );
+
+  const handleRemoveAttachment = useCallback(
+    (index) => {
+      setFormData((prev) => ({
+        ...prev,
+        attachments: prev.attachments.filter((_, i) => i !== index),
+      }));
+      showToast('File removed', 'success');
+    },
+    [setFormData, showToast]
+  );
+
+  const handleRenameAttachment = useCallback(
+    (index, newName) => {
+      if (!newName || !newName.trim()) return;
+      setFormData((prev) => ({
+        ...prev,
+        attachments: prev.attachments.map((att, i) =>
+          i === index ? { ...att, name: newName.trim() } : att
+        ),
+      }));
+      showToast('File renamed', 'success');
+    },
+    [setFormData, showToast]
+  );
+
+  const handleSaveToApi = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        property_address: formData.propertyAddress,
+        form_data: formData,
+        status: 'draft',
+      };
+      if (id) {
+        await checklistsApi.update(id, payload);
+      } else {
+        await checklistsApi.create(payload);
+      }
+      showToast('Checklist saved!', 'success');
+    } catch {
+      showToast('Failed to save checklist', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleGeneratePdf = async () => {
+    showToast('Generating PDF...', 'success');
+    try {
+      const result = await generatePRC(formData);
+      setGeneratedPdfBlob(result.blob);
+
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(result.blob);
+      link.download = result.filename || suggestedFilename;
+      link.click();
+
+      const attachText =
+        formData.attachments.length > 0
+          ? ` with ${formData.attachments.length} attachment(s)`
+          : '';
+      showToast(`PDF generated${attachText}!`, 'success');
+    } catch {
+      showToast('Error generating PDF', 'error');
+    }
+  };
+
+  if (loading) return <LoadingSpinner />;
+
+  return (
+    <div className="max-w-2xl mx-auto p-3 sm:p-4">
+      <PropertyAddress formData={formData} handleChange={handleChange} />
+      <AssessorSection
+        formData={formData}
+        handleChange={handleChange}
+        handleAmountChange={handleAmountChange}
+      />
+      <CodeEnforcementSection formData={formData} handleChange={handleChange} />
+      <DocumentsSection formData={formData} handleChange={handleChange} onFileUpload={handleFileUpload}>
+        <AttachmentUpload onFileUpload={handleFileUpload} />
+      </DocumentsSection>
+
+      {formData.attachments.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4 mb-3 sm:mb-4">
+          <AttachmentGallery
+            attachments={formData.attachments}
+            onRemove={handleRemoveAttachment}
+            onRename={handleRenameAttachment}
+          />
+        </div>
+      )}
+
+      <CompletedBySection formData={formData} handleChange={handleChange} />
+
+      <div className="mb-4">
+        <button
+          onClick={handleSaveToApi}
+          disabled={saving}
+          className="action-button w-full py-3 rounded-lg font-bold text-base text-[var(--brand-text-on-primary)] transition-colors disabled:opacity-50"
+          style={{ backgroundColor: 'var(--brand-primary)' }}
+        >
+          {saving ? 'Saving...' : 'Save Checklist'}
+        </button>
+      </div>
+
+      <ChecklistActions
+        formData={formData}
+        generatedPdfBlob={generatedPdfBlob}
+        onGeneratePdf={handleGeneratePdf}
+        suggestedFilename={suggestedFilename}
+      />
+
+      <StatusToast message={toast.message} type={toast.type} show={toast.show} />
+    </div>
+  );
+}

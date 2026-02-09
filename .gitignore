@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.env
+*.local
+uploads/
+
+# Capacitor native dirs (regenerated via cap sync)
+client/android/
+client/ios/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.tgz

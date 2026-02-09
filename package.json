@@ -1,0 +1,13 @@
+{
+  "name": "pocket-prc-4",
+  "version": "4.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start",
+    "install:all": "cd client && npm install && cd ../server && npm install",
+    "migrate": "cd server && npm run migrate"
+  }
+}
