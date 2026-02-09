@@ -81,7 +81,7 @@ export default function Header() {
                   <p className="text-gray-500 text-xs truncate">{user?.email}</p>
                 </div>
                 <button
-                  onClick={() => { setDropdownOpen(false); navigate('/'); }}
+                  onClick={() => { setDropdownOpen(false); navigate('/profile'); }}
                   className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
                 >
                   <User size={16} /> Profile

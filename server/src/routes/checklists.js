@@ -65,7 +65,7 @@ router.get('/', async (req, res, next) => {
 // POST / - Create checklist
 router.post('/', async (req, res, next) => {
   try {
-    const { propertyAddress, formData, notes } = req.body;
+    const { property_address, form_data, notes } = req.body;
     const { userId } = req.user;
 
     const userResult = await query('SELECT team_id FROM users WHERE id = $1', [userId]);
@@ -75,13 +75,13 @@ router.post('/', async (req, res, next) => {
       `INSERT INTO checklists (owner_id, team_id, property_address, form_data, notes)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [userId, teamId, propertyAddress || null, JSON.stringify(formData || {}), notes || null]
+      [userId, teamId, property_address || null, JSON.stringify(form_data || {}), notes || null]
     );
 
     await query(
       `INSERT INTO activity_log (user_id, checklist_id, action, details)
        VALUES ($1, $2, 'created', $3)`,
-      [userId, result.rows[0].id, JSON.stringify({ propertyAddress })]
+      [userId, result.rows[0].id, JSON.stringify({ property_address })]
     );
 
     res.status(201).json({ checklist: result.rows[0] });
@@ -141,7 +141,7 @@ router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { userId, role } = req.user;
-    const { propertyAddress, formData, notes } = req.body;
+    const { property_address, form_data, notes } = req.body;
 
     const existing = await query('SELECT * FROM checklists WHERE id = $1', [id]);
     if (existing.rows.length === 0) {
@@ -171,8 +171,8 @@ router.put('/:id', async (req, res, next) => {
        WHERE id = $4
        RETURNING *`,
       [
-        propertyAddress !== undefined ? propertyAddress : null,
-        formData !== undefined ? JSON.stringify(formData) : null,
+        property_address !== undefined ? property_address : null,
+        form_data !== undefined ? JSON.stringify(form_data) : null,
         notes !== undefined ? notes : null,
         id,
       ]

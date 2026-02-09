@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import useChecklist from '../../hooks/useChecklist';
 import * as checklistsApi from '../../api/checklists';
 import { saveChecklist as saveToIdb } from '../../lib/db';
@@ -17,9 +17,11 @@ import LoadingSpinner from '../Shared/LoadingSpinner';
 
 export default function ChecklistPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { formData, setFormData, handleChange, handleAmountChange, loadChecklist } = useChecklist();
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [generatedPdfBlob, setGeneratedPdfBlob] = useState(null);
   const [suggestedFilename, setSuggestedFilename] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
@@ -38,8 +40,12 @@ export default function ChecklistPage() {
       .then((data) => {
         const record = data.checklist || data;
         loadChecklist(record.form_data || record);
+        setLoadFailed(false);
       })
-      .catch(() => showToast('Failed to load checklist', 'error'))
+      .catch(() => {
+        showToast('Failed to load checklist', 'error');
+        setLoadFailed(true);
+      })
       .finally(() => setLoading(false));
   }, [id, loadChecklist, showToast]);
 
@@ -153,12 +159,17 @@ export default function ChecklistPage() {
       const payload = {
         property_address: formData.propertyAddress,
         form_data: formData,
-        status: 'draft',
       };
       if (id) {
-        await checklistsApi.update(id, payload);
+        const result = await checklistsApi.update(id, payload);
+        if (result.checklist?.form_data) {
+          loadChecklist(result.checklist.form_data);
+        }
       } else {
-        await checklistsApi.create(payload);
+        const result = await checklistsApi.create(payload);
+        if (result.checklist?.id) {
+          navigate(`/checklist/${result.checklist.id}`, { replace: true });
+        }
       }
       showToast('Checklist saved!', 'success');
     } catch {
@@ -219,11 +230,11 @@ export default function ChecklistPage() {
       <div className="mb-4">
         <button
           onClick={handleSaveToApi}
-          disabled={saving}
+          disabled={saving || loadFailed}
           className="action-button w-full py-3 rounded-lg font-bold text-base text-[var(--brand-text-on-primary)] transition-colors disabled:opacity-50"
           style={{ backgroundColor: 'var(--brand-primary)' }}
         >
-          {saving ? 'Saving...' : 'Save Checklist'}
+          {loadFailed ? 'Cannot Save (Load Failed)' : saving ? 'Saving...' : 'Save Checklist'}
         </button>
       </div>
 

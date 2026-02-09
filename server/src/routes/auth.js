@@ -207,7 +207,7 @@ router.get('/me', verifyToken, async (req, res, next) => {
 // PUT /me
 router.put('/me', verifyToken, async (req, res, next) => {
   try {
-    const { name, avatar_url } = req.body;
+    const { name, avatar_url, current_password, new_password } = req.body;
     const updates = [];
     const values = [];
     let paramIndex = 1;
@@ -219,6 +219,27 @@ router.put('/me', verifyToken, async (req, res, next) => {
     if (avatar_url !== undefined) {
       updates.push(`avatar_url = $${paramIndex++}`);
       values.push(avatar_url);
+    }
+
+    // Password change
+    if (current_password && new_password) {
+      if (new_password.length < 6) {
+        throw createError('New password must be at least 6 characters', 400);
+      }
+
+      const userResult = await query('SELECT password_hash FROM users WHERE id = $1', [req.user.userId]);
+      if (userResult.rows.length === 0) {
+        throw createError('User not found', 404);
+      }
+
+      const valid = await bcrypt.compare(current_password, userResult.rows[0].password_hash);
+      if (!valid) {
+        throw createError('Current password is incorrect', 400);
+      }
+
+      const newHash = await bcrypt.hash(new_password, 10);
+      updates.push(`password_hash = $${paramIndex++}`);
+      values.push(newHash);
     }
 
     if (updates.length === 0) {

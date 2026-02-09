@@ -34,6 +34,10 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
+  const updateUser = useCallback((userData) => {
+    setUser((prev) => (prev ? { ...prev, ...userData } : prev));
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     setUser(null);
@@ -47,6 +51,7 @@ export function AuthProvider({ children }) {
         isLoading,
         login,
         register,
+        updateUser,
         logout,
       }}
     >

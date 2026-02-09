@@ -9,6 +9,7 @@ import DashboardPage from './components/Dashboard/DashboardPage';
 import ChecklistPage from './components/Checklist/ChecklistPage';
 import TeamPage from './components/Team/TeamPage';
 import AdminPage from './components/Admin/AdminPage';
+import ProfilePage from './components/Profile/ProfilePage';
 import AppBanner from './components/Shared/AppBanner';
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
               <Route path="/checklist/:id" element={<ChecklistPage />} />
               <Route path="/team" element={<TeamPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Palette, Users } from 'lucide-react';
 import BrandingSettings from './BrandingSettings';
+import UserManagement from './UserManagement';
 
 const TABS = [
   { id: 'branding', label: 'Branding', icon: Palette },
@@ -32,13 +33,7 @@ export default function AdminPage() {
       </div>
 
       {activeTab === 'branding' && <BrandingSettings />}
-      {activeTab === 'users' && (
-        <div className="bg-white rounded-lg shadow p-6 text-center text-gray-400">
-          <Users size={48} className="mx-auto mb-3" />
-          <p className="text-lg font-medium">User Management</p>
-          <p className="text-sm">User management features coming soon.</p>
-        </div>
-      )}
+      {activeTab === 'users' && <UserManagement />}
     </div>
   );
 }

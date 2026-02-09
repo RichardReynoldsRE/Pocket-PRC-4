@@ -1,4 +1,4 @@
-import { get, post } from './client';
+import { get, post, put } from './client';
 
 export function login(email, password) {
   return post('/api/auth/login', { email, password });
@@ -14,4 +14,8 @@ export function refreshToken() {
 
 export function getMe() {
   return get('/api/auth/me');
+}
+
+export function updateProfile(data) {
+  return put('/api/auth/me', data);
 }
