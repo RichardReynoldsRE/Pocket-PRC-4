@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, Shield, User } from 'lucide-react';
+import { Trash2, Shield, Crown, User } from 'lucide-react';
 
 const ROLE_STYLES = {
   owner: 'bg-purple-100 text-purple-800',
@@ -17,7 +17,15 @@ const ROLE_LABELS = {
   isa: 'ISA',
 };
 
-export default function MemberList({ members, currentUserId, onRemove, onChangeRole }) {
+export default function MemberList({
+  members,
+  currentUserId,
+  canManage,
+  isOwner,
+  onRemove,
+  onChangeRole,
+  onTransferOwnership,
+}) {
   const [changingRoleFor, setChangingRoleFor] = useState(null);
 
   const handleRemoveClick = (member) => {
@@ -39,7 +47,7 @@ export default function MemberList({ members, currentUserId, onRemove, onChangeR
             <th className="px-4 py-3">Name</th>
             <th className="px-4 py-3 hidden sm:table-cell">Email</th>
             <th className="px-4 py-3">Role</th>
-            <th className="px-4 py-3 text-right">Actions</th>
+            {canManage && <th className="px-4 py-3 text-right">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -55,14 +63,19 @@ export default function MemberList({ members, currentUserId, onRemove, onChangeR
                       {member.name?.charAt(0)?.toUpperCase() || <User size={14} />}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800">{member.name}</p>
+                      <p className="font-medium text-gray-800">
+                        {member.name}
+                        {isCurrentUser && (
+                          <span className="text-xs text-gray-400 ml-1">(you)</span>
+                        )}
+                      </p>
                       <p className="text-xs text-gray-500 sm:hidden">{member.email}</p>
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-3 text-gray-600 hidden sm:table-cell">{member.email}</td>
                 <td className="px-4 py-3">
-                  {showingRoleSelect ? (
+                  {showingRoleSelect && canManage ? (
                     <select
                       value={member.role}
                       onChange={(e) => handleRoleChange(member.id, e.target.value)}
@@ -70,7 +83,6 @@ export default function MemberList({ members, currentUserId, onRemove, onChangeR
                       autoFocus
                       className="text-xs font-medium px-2 py-1 rounded border border-gray-300 bg-white"
                     >
-                      <option value="owner">Owner</option>
                       <option value="team_lead">Team Lead</option>
                       <option value="agent">Agent</option>
                       <option value="transaction_coordinator">Transaction Coordinator</option>
@@ -86,10 +98,10 @@ export default function MemberList({ members, currentUserId, onRemove, onChangeR
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-right">
-                  {!isCurrentUser && (onRemove || onChangeRole) && (
-                    <div className="flex items-center justify-end gap-2">
-                      {onChangeRole && (
+                {canManage && (
+                  <td className="px-4 py-3 text-right">
+                    {!isCurrentUser && (
+                      <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setChangingRoleFor(member.id)}
                           title="Change role"
@@ -97,19 +109,26 @@ export default function MemberList({ members, currentUserId, onRemove, onChangeR
                         >
                           <Shield size={16} />
                         </button>
-                      )}
-                      {onRemove && (
+                        {isOwner && member.role !== 'owner' && (
+                          <button
+                            onClick={() => onTransferOwnership(member.id)}
+                            title="Make owner"
+                            className="p-2 text-gray-400 hover:text-purple-600 transition-colors"
+                          >
+                            <Crown size={16} />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleRemoveClick(member)}
-                          title="Remove member"
+                          title="Remove from team"
                           className="p-2 text-gray-400 hover:text-red-600 transition-colors"
                         >
                           <Trash2 size={16} />
                         </button>
-                      )}
-                    </div>
-                  )}
-                </td>
+                      </div>
+                    )}
+                  </td>
+                )}
               </tr>
             );
           })}

@@ -27,3 +27,11 @@ export function removeMember(teamId, memberId) {
 export function changeMemberRole(teamId, memberId, role) {
   return put(`/api/teams/${teamId}/members/${memberId}/role`, { role });
 }
+
+export function transferOwnership(teamId, newOwnerId) {
+  return post(`/api/teams/${teamId}/transfer-ownership`, { newOwnerId });
+}
+
+export function deleteTeam(teamId) {
+  return del(`/api/teams/${teamId}`);
+}

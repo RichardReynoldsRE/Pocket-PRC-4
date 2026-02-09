@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, Save, Pencil } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Users, UserPlus, Save, Pencil, Trash2, Crown } from 'lucide-react';
 import * as teamsApi from '../../api/teams';
 import { useAuth } from '../../contexts/AuthContext';
 import MemberList from './MemberList';
@@ -8,7 +9,8 @@ import LoadingSpinner from '../Shared/LoadingSpinner';
 import StatusToast from '../Shared/StatusToast';
 
 export default function TeamPage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const navigate = useNavigate();
   const [team, setTeam] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,11 @@ export default function TeamPage() {
   const [savingTeam, setSavingTeam] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
 
-  const canManage = ['owner', 'team_lead'].includes(user?.role);
+  // Derive canManage from members list, not auth context (which may have stale JWT role)
+  const currentMember = members.find((m) => m.id === user?.id);
+  const myRole = currentMember?.role || user?.role;
+  const canManage = ['owner', 'team_lead'].includes(myRole);
+  const isOwner = myRole === 'owner';
 
   const showToast = (message, type) => {
     setToast({ show: true, message, type });
@@ -68,6 +74,8 @@ export default function TeamPage() {
       await teamsApi.create({ name: newTeamName.trim() });
       showToast('Team created successfully!', 'success');
       setNewTeamName('');
+      // Update auth context role since creating a team makes you owner
+      updateUser({ role: 'owner' });
       await loadTeams();
     } catch (err) {
       showToast(err.message || 'Failed to create team', 'error');
@@ -99,7 +107,7 @@ export default function TeamPage() {
     try {
       const data = await teamsApi.invite(team.id, inviteEmail, inviteRole);
       setInviteLink(data.invite?.link || '');
-      showToast('Invitation sent!', 'success');
+      showToast('Invitation created!', 'success');
       setInviteEmail('');
       await loadMembers(team.id);
     } catch (err) {
@@ -111,7 +119,7 @@ export default function TeamPage() {
     if (!team) return;
     try {
       await teamsApi.removeMember(team.id, memberId);
-      showToast('Member removed successfully', 'success');
+      showToast('Member removed', 'success');
       await loadMembers(team.id);
     } catch (err) {
       showToast(err.message || 'Failed to remove member', 'error');
@@ -122,10 +130,42 @@ export default function TeamPage() {
     if (!team) return;
     try {
       await teamsApi.changeMemberRole(team.id, memberId, role);
-      showToast('Role updated successfully', 'success');
+      showToast('Role updated', 'success');
       await loadMembers(team.id);
     } catch (err) {
       showToast(err.message || 'Failed to change role', 'error');
+    }
+  };
+
+  const handleTransferOwnership = async (memberId) => {
+    if (!team) return;
+    const member = members.find((m) => m.id === memberId);
+    if (!window.confirm(`Transfer ownership to ${member?.name}? You will be demoted to Team Lead.`)) {
+      return;
+    }
+    try {
+      await teamsApi.transferOwnership(team.id, memberId);
+      showToast('Ownership transferred', 'success');
+      updateUser({ role: 'team_lead' });
+      await loadMembers(team.id);
+    } catch (err) {
+      showToast(err.message || 'Failed to transfer ownership', 'error');
+    }
+  };
+
+  const handleDeleteTeam = async () => {
+    if (!team) return;
+    if (!window.confirm(`Delete "${team.name}"? All members will be removed from the team. This cannot be undone.`)) {
+      return;
+    }
+    try {
+      await teamsApi.deleteTeam(team.id);
+      showToast('Team deleted', 'success');
+      updateUser({ role: 'agent', team_id: null });
+      setTeam(null);
+      setMembers([]);
+    } catch (err) {
+      showToast(err.message || 'Failed to delete team', 'error');
     }
   };
 
@@ -238,38 +278,54 @@ export default function TeamPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {canManage && (
-                <>
-                  <button
-                    onClick={() => setEditing(true)}
-                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                    title="Edit team"
-                  >
-                    <Pencil size={18} />
-                  </button>
-                  <button
-                    onClick={() => setShowInvite(true)}
-                    className="action-button flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm text-[var(--brand-text-on-primary)] transition-colors"
-                    style={{ backgroundColor: 'var(--brand-primary)' }}
-                  >
-                    <UserPlus size={18} />
-                    Invite
-                  </button>
-                </>
-              )}
-            </div>
+            {canManage && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setEditing(true)}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Edit team"
+                >
+                  <Pencil size={18} />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* Action Buttons */}
+      {canManage && (
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setShowInvite(true)}
+            className="action-button flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm text-[var(--brand-text-on-primary)] transition-colors"
+            style={{ backgroundColor: 'var(--brand-primary)' }}
+          >
+            <UserPlus size={18} />
+            Invite Member
+          </button>
+          {isOwner && (
+            <button
+              onClick={handleDeleteTeam}
+              className="action-button flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm bg-red-600 text-white hover:bg-red-700 transition-colors"
+            >
+              <Trash2 size={18} />
+              Delete Team
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Members */}
       {members.length > 0 ? (
         <MemberList
           members={members}
           currentUserId={user?.id}
-          onRemove={canManage ? handleRemoveMember : undefined}
-          onChangeRole={canManage ? handleChangeRole : undefined}
+          canManage={canManage}
+          isOwner={isOwner}
+          onRemove={handleRemoveMember}
+          onChangeRole={handleChangeRole}
+          onTransferOwnership={handleTransferOwnership}
         />
       ) : (
         <div className="text-center text-gray-400 py-12">

@@ -1,9 +1,10 @@
 import jwt from 'jsonwebtoken';
+import { query } from '../database.js';
 import { createError } from '../utils/errors.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
-export function verifyToken(req, res, next) {
+export async function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -14,10 +15,15 @@ export function verifyToken(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Read current role from database (JWT role may be stale after migrations/changes)
+    const result = await query('SELECT role FROM users WHERE id = $1', [decoded.userId]);
+    const currentRole = result.rows[0]?.role || decoded.role;
+
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
-      role: decoded.role,
+      role: currentRole,
     };
     next();
   } catch (err) {
