@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FileEdit, Clock, CheckCircle } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import useChecklist from '../../hooks/useChecklist';
 import * as checklistsApi from '../../api/checklists';
 import { saveChecklist as saveToIdb } from '../../lib/db';
@@ -19,6 +20,7 @@ import LoadingSpinner from '../Shared/LoadingSpinner';
 export default function ChecklistPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { formData, setFormData, handleChange, handleAmountChange, loadChecklist } = useChecklist();
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
@@ -51,6 +53,13 @@ export default function ChecklistPage() {
       })
       .finally(() => setLoading(false));
   }, [id, loadChecklist, showToast]);
+
+  // Default "Completed By" to signed-in user's name for new checklists
+  useEffect(() => {
+    if (!id && user?.name && !formData.completedBy) {
+      handleChange('completedBy', user.name);
+    }
+  }, [id, user?.name]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Generate suggested filename
   useEffect(() => {
@@ -200,16 +209,11 @@ export default function ChecklistPage() {
       const result = await generatePRC(formData);
       setGeneratedPdfBlob(result.blob);
 
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(result.blob);
-      link.download = result.filename || suggestedFilename;
-      link.click();
-
       const attachText =
         formData.attachments.length > 0
           ? ` with ${formData.attachments.length} attachment(s)`
           : '';
-      showToast(`PDF generated${attachText}!`, 'success');
+      showToast(`PDF generated${attachText}! Use Save or Share below.`, 'success');
     } catch {
       showToast('Error generating PDF', 'error');
     }
@@ -291,6 +295,7 @@ export default function ChecklistPage() {
         generatedPdfBlob={generatedPdfBlob}
         onGeneratePdf={handleGeneratePdf}
         suggestedFilename={suggestedFilename}
+        showToast={showToast}
       />
 
       <StatusToast message={toast.message} type={toast.type} show={toast.show} />
