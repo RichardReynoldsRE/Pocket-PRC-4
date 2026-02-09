@@ -37,6 +37,11 @@ export default function AppBanner() {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
   };
 
+  const handleDownload = () => {
+    // Only mark dismissed — don't hide, so the <a> tag stays in the DOM for navigation
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+  };
+
   if (!visible) return null;
 
   return (
@@ -66,7 +71,7 @@ export default function AppBanner() {
             href="/api/download/app"
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg font-bold text-sm text-white flex-shrink-0 transition-colors"
             style={{ backgroundColor: 'var(--brand-primary)' }}
-            onClick={dismiss}
+            onClick={handleDownload}
           >
             <Download size={16} />
             Get App
