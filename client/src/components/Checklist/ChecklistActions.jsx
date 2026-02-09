@@ -14,12 +14,35 @@ async function blobToBase64(blob) {
   });
 }
 
-async function savePdfNative(blob, filename) {
+async function savePdfToCache(blob, filename) {
   const base64Data = await blobToBase64(blob);
   const result = await Filesystem.writeFile({
     path: filename,
     data: base64Data,
     directory: Directory.Cache,
+  });
+  return result.uri;
+}
+
+async function savePdfToDocuments(blob, filename) {
+  const base64Data = await blobToBase64(blob);
+
+  // Ensure "Pocket PRC" folder exists in Documents
+  try {
+    await Filesystem.mkdir({
+      path: 'Pocket PRC',
+      directory: Directory.Documents,
+      recursive: true,
+    });
+  } catch {
+    // Directory may already exist — that's fine
+  }
+
+  const result = await Filesystem.writeFile({
+    path: `Pocket PRC/${filename}`,
+    data: base64Data,
+    directory: Directory.Documents,
+    recursive: true,
   });
   return result.uri;
 }
@@ -37,8 +60,8 @@ export default function ChecklistActions({
     if (!generatedPdfBlob) return;
     if (isNative) {
       try {
-        await savePdfNative(generatedPdfBlob, suggestedFilename);
-        if (showToast) showToast('PDF saved to device!', 'success');
+        await savePdfToDocuments(generatedPdfBlob, suggestedFilename);
+        if (showToast) showToast('PDF saved to Documents/Pocket PRC/', 'success');
       } catch (err) {
         console.error('Save error:', err);
         if (showToast) showToast('Failed to save PDF', 'error');
@@ -72,7 +95,7 @@ export default function ChecklistActions({
 
     if (isNative) {
       try {
-        const uri = await savePdfNative(generatedPdfBlob, suggestedFilename);
+        const uri = await savePdfToCache(generatedPdfBlob, suggestedFilename);
         await Share.share({
           title: 'Public Records Checklist',
           text: `Public Records Checklist for ${formData.propertyAddress || 'property'}`,
