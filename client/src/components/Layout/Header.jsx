@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Upload, ChevronDown, LogOut, Shield, User } from 'lucide-react';
+import { Save, Upload, ChevronDown, LogOut, Shield, User, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import Logo from '../Shared/Logo';
@@ -85,6 +85,12 @@ export default function Header() {
                   className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
                 >
                   <User size={16} /> Profile
+                </button>
+                <button
+                  onClick={() => { setDropdownOpen(false); navigate('/team'); }}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <Users size={16} /> Team
                 </button>
                 {user?.role === 'owner' && (
                   <button
