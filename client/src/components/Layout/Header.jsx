@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Save, Upload, ChevronDown, LogOut, Shield, User } from 'lucide-react';
+import { Save, Upload, ChevronDown, LogOut, Shield, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import Logo from '../Shared/Logo';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -55,7 +56,7 @@ export default function Header() {
             onClick={() => navigate('/')}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
-            <Home size={28} />
+            <Logo size={36} />
             <div className="text-left">
               <h1 className="text-xl font-bold">{brandConfig.app_name || 'Pocket PRC'}</h1>
               <p className="text-xs opacity-75">v4.0</p>

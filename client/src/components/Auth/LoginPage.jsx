@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import Logo from '../Shared/Logo';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -33,7 +33,7 @@ export default function LoginPage() {
         className="text-[var(--brand-text-on-primary)] p-8 text-center"
         style={{ backgroundColor: 'var(--brand-primary)' }}
       >
-        <Home size={48} className="mx-auto mb-3" />
+        <div className="mx-auto mb-3 w-fit"><Logo size={64} /></div>
         <h1 className="text-2xl font-bold">{brandConfig.app_name || 'Pocket PRC'}</h1>
         <p className="text-sm opacity-75 mt-1">Public Records Checklist</p>
       </div>

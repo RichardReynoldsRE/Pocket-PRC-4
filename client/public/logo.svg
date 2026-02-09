@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="clipGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+    <linearGradient id="houseGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Clipboard body -->
+  <rect x="96" y="72" width="320" height="400" rx="28" fill="url(#clipGrad)" filter="url(#shadow)"/>
+
+  <!-- Clipboard clip at top -->
+  <rect x="176" y="44" width="160" height="56" rx="12" fill="#7f1d1d"/>
+  <rect x="208" y="52" width="96" height="16" rx="8" fill="#fca5a5"/>
+
+  <!-- Paper area -->
+  <rect x="120" y="120" width="272" height="328" rx="14" fill="#ffffff"/>
+
+  <!-- House icon in center-top of paper -->
+  <g transform="translate(256, 210)">
+    <!-- Roof -->
+    <polygon points="0,-60 -70,10 -56,10 -56,50 56,50 56,10 70,10" fill="url(#houseGrad)" stroke="#b91c1c" stroke-width="4" stroke-linejoin="round"/>
+    <!-- Door -->
+    <rect x="-14" y="10" width="28" height="40" rx="3" fill="#b91c1c"/>
+    <!-- Door knob -->
+    <circle cx="8" cy="34" r="3" fill="#fbbf24"/>
+    <!-- Left window -->
+    <rect x="-44" y="4" width="20" height="18" rx="2" fill="#b91c1c" opacity="0.8"/>
+    <line x1="-34" y1="4" x2="-34" y2="22" stroke="#fbbf24" stroke-width="1.5"/>
+    <line x1="-44" y1="13" x2="-24" y2="13" stroke="#fbbf24" stroke-width="1.5"/>
+    <!-- Right window -->
+    <rect x="24" y="4" width="20" height="18" rx="2" fill="#b91c1c" opacity="0.8"/>
+    <line x1="34" y1="4" x2="34" y2="22" stroke="#fbbf24" stroke-width="1.5"/>
+    <line x1="24" y1="13" x2="44" y2="13" stroke="#fbbf24" stroke-width="1.5"/>
+    <!-- Chimney -->
+    <rect x="26" y="-52" width="16" height="30" rx="2" fill="#7f1d1d"/>
+  </g>
+
+  <!-- Checklist lines with checkmarks -->
+  <!-- Line 1 - checked -->
+  <g transform="translate(148, 296)">
+    <rect width="20" height="20" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <polyline points="4,10 8,15 16,5" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="30" y="6" width="100" height="8" rx="4" fill="#e5e7eb"/>
+  </g>
+
+  <!-- Line 2 - checked -->
+  <g transform="translate(148, 326)">
+    <rect width="20" height="20" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <polyline points="4,10 8,15 16,5" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="30" y="6" width="140" height="8" rx="4" fill="#e5e7eb"/>
+  </g>
+
+  <!-- Line 3 - checked -->
+  <g transform="translate(148, 356)">
+    <rect width="20" height="20" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <polyline points="4,10 8,15 16,5" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="30" y="6" width="80" height="8" rx="4" fill="#e5e7eb"/>
+  </g>
+
+  <!-- Line 4 - unchecked -->
+  <g transform="translate(148, 386)">
+    <rect width="20" height="20" rx="4" fill="#ffffff" stroke="#d1d5db" stroke-width="2"/>
+    <rect x="30" y="6" width="120" height="8" rx="4" fill="#f3f4f6"/>
+  </g>
+
+  <!-- Line 5 - unchecked -->
+  <g transform="translate(148, 416)">
+    <rect width="20" height="20" rx="4" fill="#ffffff" stroke="#d1d5db" stroke-width="2"/>
+    <rect x="30" y="6" width="90" height="8" rx="4" fill="#f3f4f6"/>
+  </g>
+</svg>
