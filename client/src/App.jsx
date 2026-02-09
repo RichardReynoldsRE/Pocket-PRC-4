@@ -9,11 +9,13 @@ import DashboardPage from './components/Dashboard/DashboardPage';
 import ChecklistPage from './components/Checklist/ChecklistPage';
 import TeamPage from './components/Team/TeamPage';
 import AdminPage from './components/Admin/AdminPage';
+import AppBanner from './components/Shared/AppBanner';
 
 export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
+        <AppBanner />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

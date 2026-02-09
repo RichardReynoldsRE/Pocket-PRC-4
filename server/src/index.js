@@ -52,6 +52,11 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/branding', brandingRoutes);
 
+// App download - redirects to latest GitHub release APK
+app.get('/api/download/app', (_req, res) => {
+  res.redirect('https://github.com/RichardReynoldsRE/Pocket-PRC-4/releases/latest/download/app-debug.apk');
+});
+
 // Health check
 app.get('/api/health', async (_req, res) => {
   try {
