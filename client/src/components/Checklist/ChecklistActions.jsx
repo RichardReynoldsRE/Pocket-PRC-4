@@ -1,7 +1,9 @@
-import { FileText, Mail, Share2, Download } from 'lucide-react';
+import { useState } from 'react';
+import { FileText, Mail, Share2, Download, Send, X } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { post } from '../../api/client';
 
 async function blobToBase64(blob) {
   return new Promise((resolve) => {
@@ -47,6 +49,22 @@ async function savePdfToDocuments(blob, filename) {
   return result.uri;
 }
 
+// Sample lead data for demo
+const SAMPLE_LEAD = {
+  mlsNumber: 'MLS-2026-48291',
+  offerPrice: '$425,000',
+  closingDate: '03/15/2026',
+  buyerName: 'James & Sarah Mitchell',
+  buyerEmail: 'jmitchell@email.com',
+  buyerPhone: '(207) 555-0142',
+  lender: 'Maine Community Bank',
+  loanType: 'Conventional 30-Year Fixed',
+  agentEmail: 'agent@kwrealty.com',
+  agentPhone: '(207) 555-0198',
+  brokerage: 'Keller Williams Realty of Maine',
+  notes: 'Buyers are pre-approved. Home inspection scheduled for next week. Requesting a 45-day closing.',
+};
+
 export default function ChecklistActions({
   formData,
   generatedPdfBlob,
@@ -55,6 +73,9 @@ export default function ChecklistActions({
   showToast,
 }) {
   const isNative = Capacitor.isNativePlatform();
+  const [showLeadModal, setShowLeadModal] = useState(false);
+  const [sendingLead, setSendingLead] = useState(false);
+  const [leadSent, setLeadSent] = useState(false);
 
   const handleDownload = async () => {
     if (!generatedPdfBlob) return;
@@ -128,37 +149,216 @@ export default function ChecklistActions({
     }
   };
 
+  const handleSendLead = async () => {
+    setSendingLead(true);
+    try {
+      const result = await post('/api/send-lead', {
+        senderName: formData.completedBy || 'Pocket PRC User',
+        propertyAddress: formData.propertyAddress || 'Address Not Provided',
+        leadData: SAMPLE_LEAD,
+      });
+
+      setLeadSent(true);
+      setShowLeadModal(false);
+
+      if (result.previewUrl) {
+        console.log('Email preview URL:', result.previewUrl);
+      }
+
+      if (showToast) showToast('Lead sent to Mainland Title LLC!', 'success');
+    } catch (err) {
+      console.error('Send lead error:', err);
+      if (showToast) showToast('Failed to send lead. Please try again.', 'error');
+    } finally {
+      setSendingLead(false);
+    }
+  };
+
   return (
-    <div className="px-0 py-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <button
-          onClick={onGeneratePdf}
-          className="action-button bg-yellow-400 text-gray-900 px-6 py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-yellow-300 transition-colors shadow-lg"
-        >
-          <FileText size={24} />
-          <span>Generate PDF</span>
-        </button>
+    <>
+      <div className="px-0 py-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button
+            onClick={onGeneratePdf}
+            className="action-button bg-yellow-400 text-gray-900 px-6 py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-yellow-300 transition-colors shadow-lg"
+          >
+            <FileText size={24} />
+            <span>Generate PDF</span>
+          </button>
 
-        <button
-          onClick={handleDownload}
-          disabled={!generatedPdfBlob}
-          className="action-button bg-blue-600 text-white px-6 py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
-          title={!generatedPdfBlob ? 'Generate PDF first' : 'Download PDF'}
-        >
-          <Download size={24} />
-          <span>{isNative ? 'Save PDF' : 'Download PDF'}</span>
-        </button>
+          <button
+            onClick={handleDownload}
+            disabled={!generatedPdfBlob}
+            className="action-button bg-blue-600 text-white px-6 py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
+            title={!generatedPdfBlob ? 'Generate PDF first' : 'Download PDF'}
+          >
+            <Download size={24} />
+            <span>{isNative ? 'Save PDF' : 'Download PDF'}</span>
+          </button>
 
-        <button
-          onClick={handleShare}
-          disabled={!generatedPdfBlob}
-          className="action-button bg-green-600 text-white px-6 py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-green-700 transition-colors shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
-          title={!generatedPdfBlob ? 'Generate PDF first' : 'Share PDF'}
-        >
-          <Share2 size={24} />
-          <span>Share PDF</span>
-        </button>
+          <button
+            onClick={handleShare}
+            disabled={!generatedPdfBlob}
+            className="action-button bg-green-600 text-white px-6 py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-green-700 transition-colors shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
+            title={!generatedPdfBlob ? 'Generate PDF first' : 'Share PDF'}
+          >
+            <Share2 size={24} />
+            <span>Share PDF</span>
+          </button>
+        </div>
+
+        {/* Send Lead to Mainland Title LLC */}
+        <div className="mt-4">
+          <button
+            onClick={() => setShowLeadModal(true)}
+            disabled={!generatedPdfBlob || leadSent}
+            className={`w-full px-6 py-5 rounded-lg font-bold flex flex-col items-center justify-center gap-3 transition-all shadow-lg ${
+              leadSent
+                ? 'bg-gray-400 cursor-not-allowed'
+                : !generatedPdfBlob
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-[#1e3a5f] hover:bg-[#2a4d7a] active:scale-[0.98]'
+            }`}
+            title={!generatedPdfBlob ? 'Generate PDF first' : ''}
+          >
+            <img
+              src="/mainland-title-logo.png"
+              alt="Mainland Title LLC"
+              className={`h-8 object-contain brightness-0 invert ${!generatedPdfBlob || leadSent ? 'opacity-40' : ''}`}
+            />
+            <span className={`flex items-center gap-2 text-base ${!generatedPdfBlob || leadSent ? 'text-white/40' : 'text-white'}`}>
+              <Send size={18} />
+              {leadSent ? 'Lead Sent to Mainland Title LLC' : 'Send Lead to Mainland Title LLC'}
+            </span>
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Lead Preview Modal */}
+      {showLeadModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowLeadModal(false)}>
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-[#1e3a5f] text-white p-5 rounded-t-xl">
+              <div className="flex items-center justify-between mb-3">
+                <img
+                  src="/mainland-title-logo.png"
+                  alt="Mainland Title LLC"
+                  className="h-7 object-contain brightness-0 invert"
+                />
+                <button
+                  onClick={() => setShowLeadModal(false)}
+                  className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <h2 className="text-lg font-bold">Send Under Contract Lead</h2>
+              <p className="text-sm opacity-80 mt-1">Review the lead details before sending</p>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 space-y-4">
+              {/* Recipient */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-700 font-medium">
+                  <Mail size={14} className="inline mr-1.5 -mt-0.5" />
+                  To: csoucie@mlt.llc
+                </p>
+                <p className="text-sm text-blue-600 mt-1">
+                  Subject: {formData.completedBy || 'User'} has sent you a new Under Contract Lead
+                </p>
+              </div>
+
+              {/* Property Info */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Property</h3>
+                <div className="bg-gray-50 rounded-lg p-3 space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Address</span>
+                    <span className="font-medium">{formData.propertyAddress || 'Not provided'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">MLS #</span>
+                    <span className="font-medium">{SAMPLE_LEAD.mlsNumber}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Offer Price</span>
+                    <span className="font-medium">{SAMPLE_LEAD.offerPrice}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Closing Date</span>
+                    <span className="font-medium">{SAMPLE_LEAD.closingDate}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Buyer Info */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Buyer</h3>
+                <div className="bg-gray-50 rounded-lg p-3 space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Name</span>
+                    <span className="font-medium">{SAMPLE_LEAD.buyerName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Email</span>
+                    <span className="font-medium">{SAMPLE_LEAD.buyerEmail}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Phone</span>
+                    <span className="font-medium">{SAMPLE_LEAD.buyerPhone}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Lender</span>
+                    <span className="font-medium">{SAMPLE_LEAD.lender}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Loan Type</span>
+                    <span className="font-medium">{SAMPLE_LEAD.loanType}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Notes</h3>
+                <p className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700">{SAMPLE_LEAD.notes}</p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-5 pt-0 flex gap-3">
+              <button
+                onClick={() => setShowLeadModal(false)}
+                className="flex-1 py-3 rounded-lg font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendLead}
+                disabled={sendingLead}
+                className="flex-1 py-3 rounded-lg font-semibold bg-[#1e3a5f] text-white hover:bg-[#2a4d7a] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {sendingLead ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send size={18} />
+                    Send Lead
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

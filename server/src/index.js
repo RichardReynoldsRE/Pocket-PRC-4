@@ -20,6 +20,7 @@ import attachmentRoutes from './routes/attachments.js';
 import adminRoutes from './routes/admin.js';
 import syncRoutes from './routes/sync.js';
 import brandingRoutes from './routes/branding.js';
+import leadRoutes from './routes/leads.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -51,6 +52,7 @@ app.use('/api/attachments', attachmentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/branding', brandingRoutes);
+app.use('/api/send-lead', leadRoutes);
 
 // App download - redirects to latest GitHub release APK
 app.get('/api/download/app', (_req, res) => {
