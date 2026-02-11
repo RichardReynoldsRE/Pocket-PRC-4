@@ -21,6 +21,7 @@ import adminRoutes from './routes/admin.js';
 import syncRoutes from './routes/sync.js';
 import brandingRoutes from './routes/branding.js';
 import leadRoutes from './routes/leads.js';
+import rateRequestRoutes from './routes/rateRequest.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -53,6 +54,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/branding', brandingRoutes);
 app.use('/api/send-lead', leadRoutes);
+app.use('/api/send-rate-request', rateRequestRoutes);
 
 // App download - redirects to latest GitHub release APK
 app.get('/api/download/app', (_req, res) => {

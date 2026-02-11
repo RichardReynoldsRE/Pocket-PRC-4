@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Mail, Share2, Download, Send, X } from 'lucide-react';
+import { FileText, Mail, Share2, Download, Send, X, TrendingDown } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -65,6 +65,24 @@ const SAMPLE_LEAD = {
   notes: 'Buyers are pre-approved. Home inspection scheduled for next week. Requesting a 45-day closing.',
 };
 
+// Sample rate comparison data for demo
+const SAMPLE_RATE_REQUEST = {
+  mlsNumber: 'MLS-2026-48291',
+  purchasePrice: '$425,000',
+  closingDate: '03/15/2026',
+  buyerName: 'James & Sarah Mitchell',
+  buyerEmail: 'jmitchell@email.com',
+  buyerPhone: '(207) 555-0142',
+  currentLender: 'Maine Community Bank',
+  loanType: 'Conventional 30-Year Fixed',
+  downPayment: '20% ($85,000)',
+  creditScore: '740+',
+  agentEmail: 'agent@kwrealty.com',
+  agentPhone: '(207) 555-0198',
+  brokerage: 'Keller Williams Realty of Maine',
+  notes: 'Buyers are pre-approved with current lender at 6.25%. Looking to see if Annie Mac can offer a more competitive rate. Closing in 45 days.',
+};
+
 export default function ChecklistActions({
   formData,
   generatedPdfBlob,
@@ -76,6 +94,9 @@ export default function ChecklistActions({
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [sendingLead, setSendingLead] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
+  const [showRateModal, setShowRateModal] = useState(false);
+  const [sendingRate, setSendingRate] = useState(false);
+  const [rateSent, setRateSent] = useState(false);
 
   const handleDownload = async () => {
     if (!generatedPdfBlob) return;
@@ -174,6 +195,27 @@ export default function ChecklistActions({
     }
   };
 
+  const handleSendRateRequest = async () => {
+    setSendingRate(true);
+    try {
+      await post('/api/send-rate-request', {
+        senderName: formData.completedBy || 'Pocket PRC User',
+        propertyAddress: formData.propertyAddress || 'Address Not Provided',
+        leadData: SAMPLE_RATE_REQUEST,
+      });
+
+      setRateSent(true);
+      setShowRateModal(false);
+
+      if (showToast) showToast('Rate request sent to Annie Mac Home Mortgage!', 'success');
+    } catch (err) {
+      console.error('Send rate request error:', err);
+      if (showToast) showToast('Failed to send rate request. Please try again.', 'error');
+    } finally {
+      setSendingRate(false);
+    }
+  };
+
   return (
     <>
       <div className="px-0 py-6">
@@ -229,6 +271,32 @@ export default function ChecklistActions({
             <span className={`flex items-center gap-2 text-base ${!generatedPdfBlob || leadSent ? 'text-white/40' : 'text-white'}`}>
               <Send size={18} />
               {leadSent ? 'Lead Sent to Mainland Title LLC' : 'Send Lead to Mainland Title LLC'}
+            </span>
+          </button>
+        </div>
+
+        {/* Compare Rates with Annie Mac Home Mortgage */}
+        <div className="mt-3">
+          <button
+            onClick={() => setShowRateModal(true)}
+            disabled={!generatedPdfBlob || rateSent}
+            className={`w-full px-6 py-5 rounded-lg font-bold flex flex-col items-center justify-center gap-3 transition-all shadow-lg ${
+              rateSent
+                ? 'bg-gray-400 cursor-not-allowed'
+                : !generatedPdfBlob
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-white border-2 border-[#1b3c6b] hover:bg-slate-50 active:scale-[0.98]'
+            }`}
+            title={!generatedPdfBlob ? 'Generate PDF first' : ''}
+          >
+            <img
+              src="/anniemac-logo.png"
+              alt="Annie Mac Home Mortgage"
+              className={`h-8 object-contain ${!generatedPdfBlob || rateSent ? 'opacity-30' : ''}`}
+            />
+            <span className={`flex items-center gap-2 text-base ${!generatedPdfBlob || rateSent ? 'text-gray-400' : 'text-[#1b3c6b]'}`}>
+              <TrendingDown size={18} />
+              {rateSent ? 'Rate Request Sent to Annie Mac' : 'Compare Rates with Annie Mac'}
             </span>
           </button>
         </div>
@@ -352,6 +420,147 @@ export default function ChecklistActions({
                   <>
                     <Send size={18} />
                     Send Lead
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Annie Mac Rate Comparison Modal */}
+      {showRateModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowRateModal(false)}>
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-[#1b3c6b] text-white p-5 rounded-t-xl">
+              <div className="flex items-center justify-between mb-3">
+                <img
+                  src="/anniemac-logo.png"
+                  alt="Annie Mac Home Mortgage"
+                  className="h-7 object-contain brightness-0 invert"
+                />
+                <button
+                  onClick={() => setShowRateModal(false)}
+                  className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <h2 className="text-lg font-bold">Compare Rates for Your Buyer</h2>
+              <p className="text-sm opacity-80 mt-1">Review before requesting a rate comparison</p>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 space-y-4">
+              {/* Recipient */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-green-700 font-medium">
+                  <Mail size={14} className="inline mr-1.5 -mt-0.5" />
+                  To: Annie Mac Home Mortgage
+                </p>
+                <p className="text-sm text-green-600 mt-1">
+                  Subject: {formData.completedBy || 'User'} is requesting a rate comparison for their buyer
+                </p>
+              </div>
+
+              {/* Property Info */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Property</h3>
+                <div className="bg-gray-50 rounded-lg p-3 space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Address</span>
+                    <span className="font-medium">{formData.propertyAddress || 'Not provided'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">MLS #</span>
+                    <span className="font-medium">{SAMPLE_RATE_REQUEST.mlsNumber}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Purchase Price</span>
+                    <span className="font-medium">{SAMPLE_RATE_REQUEST.purchasePrice}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Closing Date</span>
+                    <span className="font-medium">{SAMPLE_RATE_REQUEST.closingDate}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Buyer Info */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Buyer</h3>
+                <div className="bg-gray-50 rounded-lg p-3 space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Name</span>
+                    <span className="font-medium">{SAMPLE_RATE_REQUEST.buyerName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Email</span>
+                    <span className="font-medium">{SAMPLE_RATE_REQUEST.buyerEmail}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Phone</span>
+                    <span className="font-medium">{SAMPLE_RATE_REQUEST.buyerPhone}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Financing */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Current Financing</h3>
+                <div className="bg-gray-50 rounded-lg p-3 space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Current Lender</span>
+                    <span className="font-medium">{SAMPLE_RATE_REQUEST.currentLender}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Loan Type</span>
+                    <span className="font-medium">{SAMPLE_RATE_REQUEST.loanType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Down Payment</span>
+                    <span className="font-medium">{SAMPLE_RATE_REQUEST.downPayment}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Est. Credit Score</span>
+                    <span className="font-medium">{SAMPLE_RATE_REQUEST.creditScore}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Notes</h3>
+                <p className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700">{SAMPLE_RATE_REQUEST.notes}</p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-5 pt-0 flex gap-3">
+              <button
+                onClick={() => setShowRateModal(false)}
+                className="flex-1 py-3 rounded-lg font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendRateRequest}
+                disabled={sendingRate}
+                className="flex-1 py-3 rounded-lg font-semibold bg-[#1b3c6b] text-white hover:bg-[#254d82] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {sendingRate ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <TrendingDown size={18} />
+                    Request Rates
                   </>
                 )}
               </button>
