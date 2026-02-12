@@ -152,15 +152,6 @@ async function start() {
     await createDefaultAdmin();
     await createDefaultBranding();
 
-    // DEBUG: dump users and checklists (remove after debugging)
-    const dbUsers = await query('SELECT id, name, email, role, is_active FROM users ORDER BY created_at');
-    console.log('=== ALL USERS ===');
-    dbUsers.rows.forEach(r => console.log(`  ${r.email} | ${r.role} | ${r.is_active ? 'active' : 'inactive'}`));
-    const dbChecklists = await query('SELECT c.id, c.property_address, c.status, u.email AS owner_email FROM checklists c JOIN users u ON c.owner_id = u.id ORDER BY c.created_at');
-    console.log('=== ALL CHECKLISTS ===');
-    dbChecklists.rows.forEach(r => console.log(`  ${r.owner_email} | ${r.property_address || '(no address)'} | ${r.status}`));
-    console.log(`Total: ${dbChecklists.rows.length} checklists, ${dbUsers.rows.length} users`);
-
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Pocket PRC server running on http://0.0.0.0:${PORT}`);
     });

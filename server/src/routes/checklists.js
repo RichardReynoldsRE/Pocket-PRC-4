@@ -17,8 +17,6 @@ router.get('/', async (req, res, next) => {
     const params = [];
     let paramIndex = 1;
 
-    console.log(`[checklists] userId=${userId} role=${role}`);
-
     if (role === 'super_admin') {
       // super_admin sees ALL checklists across all teams
       sql = 'SELECT c.*, u.name AS owner_name FROM checklists c LEFT JOIN users u ON c.owner_id = u.id';
@@ -61,7 +59,6 @@ router.get('/', async (req, res, next) => {
     sql += ' ORDER BY c.updated_at DESC';
 
     const result = await query(sql, params);
-    console.log(`[checklists] returning ${result.rows.length} checklists for role=${role}`);
     res.json({ checklists: result.rows });
   } catch (err) {
     next(err);
