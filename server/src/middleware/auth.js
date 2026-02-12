@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { query } from '../database.js';
 import { createError } from '../utils/errors.js';
-import { ROLE_HIERARCHY } from '../../shared/roles.js';
+import { ROLE_HIERARCHY } from '../../../shared/roles.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
