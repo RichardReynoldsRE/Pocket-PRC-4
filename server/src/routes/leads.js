@@ -1,14 +1,20 @@
 import { Router } from 'express';
 import { Resend } from 'resend';
+import { query } from '../database.js';
+import { verifyToken } from '../middleware/auth.js';
 
 const router = Router();
+
+router.use(verifyToken);
 
 /**
  * POST /api/send-lead
  * Sends an "Under Contract" lead email to Mainland Title LLC via Resend.
+ * Logs the send to activity_log for tracking.
  */
 router.post('/', async (req, res) => {
-  const { senderName, propertyAddress, leadData } = req.body;
+  const { senderName, propertyAddress, leadData, checklistId } = req.body;
+  const { userId } = req.user;
 
   if (!senderName || !propertyAddress) {
     return res.status(400).json({ error: 'senderName and propertyAddress are required' });
@@ -123,6 +129,15 @@ router.post('/', async (req, res) => {
     }
 
     console.log('Lead email sent:', data.id);
+
+    // Log to activity_log
+    if (checklistId) {
+      await query(
+        `INSERT INTO activity_log (user_id, checklist_id, action, details)
+         VALUES ($1, $2, 'lead_sent_mainland', $3)`,
+        [userId, checklistId, JSON.stringify({ recipient, propertyAddress, emailId: data.id })]
+      );
+    }
 
     res.json({
       success: true,

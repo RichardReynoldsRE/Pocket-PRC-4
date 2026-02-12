@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, User } from 'lucide-react';
+import { MapPin, Calendar, User, Send, TrendingDown } from 'lucide-react';
 import * as checklistsApi from '../../api/checklists';
 
 const STATUS_STYLES = {
@@ -59,6 +59,20 @@ export default function ChecklistCard({ checklist, onStatusChange }) {
               </span>
             )}
           </div>
+          {(checklist.mainland_sent || checklist.anniemac_sent) && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              {checklist.mainland_sent && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#1e3a5f] text-white">
+                  <Send size={9} /> Mainland
+                </span>
+              )}
+              {checklist.anniemac_sent && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#1b3c6b] text-white">
+                  <TrendingDown size={9} /> Annie Mac
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <span
           onClick={handleStatusClick}

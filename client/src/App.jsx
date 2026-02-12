@@ -11,6 +11,7 @@ import DashboardPage from './components/Dashboard/DashboardPage';
 import ChecklistPage from './components/Checklist/ChecklistPage';
 import TeamPage from './components/Team/TeamPage';
 import AdminPage from './components/Admin/AdminPage';
+import ReportsPage from './components/Admin/ReportsPage';
 import ProfilePage from './components/Profile/ProfilePage';
 import AppBanner from './components/Shared/AppBanner';
 
@@ -31,6 +32,7 @@ export default function App() {
               <Route path="/checklist/:id" element={<ChecklistPage />} />
               <Route path="/team" element={<TeamPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Route>

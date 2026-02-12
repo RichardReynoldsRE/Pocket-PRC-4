@@ -272,4 +272,69 @@ router.get('/stats', async (_req, res, next) => {
   }
 });
 
+// GET /reports/leads - Lead send analytics
+router.get('/reports/leads', async (_req, res, next) => {
+  try {
+    const [
+      totalLeads,
+      leadsByType,
+      leaderboard,
+      recentSends,
+    ] = await Promise.all([
+      // Total lead sends
+      query(
+        `SELECT COUNT(*)::int AS count FROM activity_log
+         WHERE action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')`
+      ),
+      // Breakdown by type
+      query(
+        `SELECT action, COUNT(*)::int AS count FROM activity_log
+         WHERE action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')
+         GROUP BY action`
+      ),
+      // Leaderboard: who sent the most leads
+      query(
+        `SELECT u.id, u.name, u.email, u.avatar_url,
+                COUNT(*)::int AS total_sends,
+                COUNT(*) FILTER (WHERE al.action = 'lead_sent_mainland')::int AS mainland_sends,
+                COUNT(*) FILTER (WHERE al.action = 'rate_request_sent_anniemac')::int AS anniemac_sends
+         FROM activity_log al
+         JOIN users u ON al.user_id = u.id
+         WHERE al.action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')
+         GROUP BY u.id, u.name, u.email, u.avatar_url
+         ORDER BY total_sends DESC`
+      ),
+      // Recent lead sends
+      query(
+        `SELECT al.action, al.details, al.created_at,
+                u.name AS user_name,
+                c.property_address
+         FROM activity_log al
+         JOIN users u ON al.user_id = u.id
+         LEFT JOIN checklists c ON al.checklist_id = c.id
+         WHERE al.action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')
+         ORDER BY al.created_at DESC
+         LIMIT 50`
+      ),
+    ]);
+
+    const typeMap = {};
+    for (const row of leadsByType.rows) {
+      typeMap[row.action] = row.count;
+    }
+
+    res.json({
+      reports: {
+        total_leads: totalLeads.rows[0].count,
+        mainland_total: typeMap.lead_sent_mainland || 0,
+        anniemac_total: typeMap.rate_request_sent_anniemac || 0,
+        leaderboard: leaderboard.rows,
+        recent_sends: recentSends.rows,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

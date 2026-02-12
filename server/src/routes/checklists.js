@@ -59,6 +59,28 @@ router.get('/', async (req, res, next) => {
     sql += ' ORDER BY c.updated_at DESC';
 
     const result = await query(sql, params);
+
+    // Attach lead send status to each checklist
+    if (result.rows.length > 0) {
+      const ids = result.rows.map(r => r.id);
+      const leadLogs = await query(
+        `SELECT checklist_id, action FROM activity_log
+         WHERE checklist_id = ANY($1)
+         AND action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')`,
+        [ids]
+      );
+      const leadMap = {};
+      for (const row of leadLogs.rows) {
+        if (!leadMap[row.checklist_id]) leadMap[row.checklist_id] = {};
+        leadMap[row.checklist_id][row.action] = true;
+      }
+      for (const checklist of result.rows) {
+        const sends = leadMap[checklist.id] || {};
+        checklist.mainland_sent = !!sends.lead_sent_mainland;
+        checklist.anniemac_sent = !!sends.rate_request_sent_anniemac;
+      }
+    }
+
     res.json({ checklists: result.rows });
   } catch (err) {
     next(err);
@@ -126,13 +148,28 @@ router.get('/:id', async (req, res, next) => {
       }
     }
 
-    const attachments = await query(
-      'SELECT * FROM attachments WHERE checklist_id = $1 ORDER BY created_at DESC',
-      [id]
-    );
+    const [attachments, leadSends] = await Promise.all([
+      query(
+        'SELECT * FROM attachments WHERE checklist_id = $1 ORDER BY created_at DESC',
+        [id]
+      ),
+      query(
+        `SELECT action, created_at FROM activity_log
+         WHERE checklist_id = $1 AND action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')
+         ORDER BY created_at DESC`,
+        [id]
+      ),
+    ]);
+
+    const leadStatus = {
+      mainland_sent: leadSends.rows.some(r => r.action === 'lead_sent_mainland'),
+      anniemac_sent: leadSends.rows.some(r => r.action === 'rate_request_sent_anniemac'),
+      mainland_sent_at: leadSends.rows.find(r => r.action === 'lead_sent_mainland')?.created_at || null,
+      anniemac_sent_at: leadSends.rows.find(r => r.action === 'rate_request_sent_anniemac')?.created_at || null,
+    };
 
     res.json({
-      checklist: { ...checklist, attachments: attachments.rows },
+      checklist: { ...checklist, attachments: attachments.rows, lead_status: leadStatus },
     });
   } catch (err) {
     next(err);

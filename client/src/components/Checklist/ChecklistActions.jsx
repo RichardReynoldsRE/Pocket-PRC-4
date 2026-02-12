@@ -90,14 +90,16 @@ export default function ChecklistActions({
   suggestedFilename,
   showToast,
   isSaved,
+  checklistId,
+  leadStatus,
 }) {
   const isNative = Capacitor.isNativePlatform();
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [sendingLead, setSendingLead] = useState(false);
-  const [leadSent, setLeadSent] = useState(false);
+  const [leadSent, setLeadSent] = useState(leadStatus?.mainland_sent || false);
   const [showRateModal, setShowRateModal] = useState(false);
   const [sendingRate, setSendingRate] = useState(false);
-  const [rateSent, setRateSent] = useState(false);
+  const [rateSent, setRateSent] = useState(leadStatus?.anniemac_sent || false);
 
   const handleDownload = async () => {
     if (!generatedPdfBlob) return;
@@ -178,6 +180,7 @@ export default function ChecklistActions({
         senderName: formData.completedBy || 'Pocket PRC User',
         propertyAddress: formData.propertyAddress || 'Address Not Provided',
         leadData: SAMPLE_LEAD,
+        checklistId: checklistId || null,
       });
 
       setLeadSent(true);
@@ -203,6 +206,7 @@ export default function ChecklistActions({
         senderName: formData.completedBy || 'Pocket PRC User',
         propertyAddress: formData.propertyAddress || 'Address Not Provided',
         leadData: SAMPLE_RATE_REQUEST,
+        checklistId: checklistId || null,
       });
 
       setRateSent(true);

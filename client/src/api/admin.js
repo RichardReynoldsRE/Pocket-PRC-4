@@ -15,3 +15,11 @@ export function updateUser(id, data) {
 export function resetUserPassword(id, sendEmail = false) {
   return post(`/api/admin/users/${id}/reset-password`, { sendEmail });
 }
+
+export function getLeadReports() {
+  return get('/api/admin/reports/leads');
+}
+
+export function getStats() {
+  return get('/api/admin/stats');
+}

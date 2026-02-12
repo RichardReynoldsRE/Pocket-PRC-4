@@ -28,6 +28,7 @@ export default function ChecklistPage() {
   const [status, setStatus] = useState('draft');
   const [generatedPdfBlob, setGeneratedPdfBlob] = useState(null);
   const [suggestedFilename, setSuggestedFilename] = useState('');
+  const [leadStatus, setLeadStatus] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const autoSaveTimer = useRef(null);
 
@@ -45,6 +46,7 @@ export default function ChecklistPage() {
         const record = data.checklist || data;
         loadChecklist(record.form_data || record);
         setStatus(record.status || 'draft');
+        setLeadStatus(record.lead_status || null);
         setLoadFailed(false);
       })
       .catch(() => {
@@ -301,6 +303,8 @@ export default function ChecklistPage() {
         suggestedFilename={suggestedFilename}
         showToast={showToast}
         isSaved={!!id}
+        checklistId={id}
+        leadStatus={leadStatus}
       />
 
       <StatusToast message={toast.message} type={toast.type} show={toast.show} />
