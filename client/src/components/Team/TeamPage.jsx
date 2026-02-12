@@ -384,6 +384,7 @@ export default function TeamPage() {
                 className="w-full p-3 border border-gray-300 rounded-lg text-base"
               >
                 <option value="agent">Agent</option>
+                <option value="owner">Owner</option>
                 <option value="team_lead">Team Lead</option>
                 <option value="transaction_coordinator">Transaction Coordinator</option>
                 <option value="isa">ISA</option>

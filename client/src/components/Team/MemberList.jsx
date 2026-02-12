@@ -85,6 +85,7 @@ export default function MemberList({
                       autoFocus
                       className="text-xs font-medium px-2 py-1 rounded border border-gray-300 bg-white"
                     >
+                      <option value="owner">Owner</option>
                       <option value="team_lead">Team Lead</option>
                       <option value="agent">Agent</option>
                       <option value="transaction_coordinator">Transaction Coordinator</option>
