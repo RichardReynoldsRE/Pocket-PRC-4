@@ -272,27 +272,46 @@ router.get('/stats', async (_req, res, next) => {
   }
 });
 
-// GET /reports/leads - Lead send analytics
-router.get('/reports/leads', async (_req, res, next) => {
+// GET /reports/leads - Lead send analytics with optional date range
+router.get('/reports/leads', async (req, res, next) => {
   try {
+    const { start, end } = req.query;
+
+    // Build date filter clause
+    let dateFilter = '';
+    const dateParams = [];
+    let paramIdx = 1;
+
+    if (start) {
+      dateFilter += ` AND al.created_at >= $${paramIdx}`;
+      dateParams.push(start);
+      paramIdx++;
+    }
+    if (end) {
+      dateFilter += ` AND al.created_at < $${paramIdx}`;
+      dateParams.push(end);
+      paramIdx++;
+    }
+
+    const actionFilter = `al.action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')`;
+
     const [
       totalLeads,
       leadsByType,
       leaderboard,
       recentSends,
     ] = await Promise.all([
-      // Total lead sends
       query(
-        `SELECT COUNT(*)::int AS count FROM activity_log
-         WHERE action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')`
+        `SELECT COUNT(*)::int AS count FROM activity_log al
+         WHERE ${actionFilter}${dateFilter}`,
+        dateParams
       ),
-      // Breakdown by type
       query(
-        `SELECT action, COUNT(*)::int AS count FROM activity_log
-         WHERE action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')
-         GROUP BY action`
+        `SELECT al.action, COUNT(*)::int AS count FROM activity_log al
+         WHERE ${actionFilter}${dateFilter}
+         GROUP BY al.action`,
+        dateParams
       ),
-      // Leaderboard: who sent the most leads
       query(
         `SELECT u.id, u.name, u.email, u.avatar_url,
                 COUNT(*)::int AS total_sends,
@@ -300,11 +319,11 @@ router.get('/reports/leads', async (_req, res, next) => {
                 COUNT(*) FILTER (WHERE al.action = 'rate_request_sent_anniemac')::int AS anniemac_sends
          FROM activity_log al
          JOIN users u ON al.user_id = u.id
-         WHERE al.action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')
+         WHERE ${actionFilter}${dateFilter}
          GROUP BY u.id, u.name, u.email, u.avatar_url
-         ORDER BY total_sends DESC`
+         ORDER BY total_sends DESC`,
+        dateParams
       ),
-      // Recent lead sends
       query(
         `SELECT al.action, al.details, al.created_at,
                 u.name AS user_name,
@@ -312,9 +331,10 @@ router.get('/reports/leads', async (_req, res, next) => {
          FROM activity_log al
          JOIN users u ON al.user_id = u.id
          LEFT JOIN checklists c ON al.checklist_id = c.id
-         WHERE al.action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')
+         WHERE ${actionFilter}${dateFilter}
          ORDER BY al.created_at DESC
-         LIMIT 50`
+         LIMIT 100`,
+        dateParams
       ),
     ]);
 

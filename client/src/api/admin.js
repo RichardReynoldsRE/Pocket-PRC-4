@@ -16,8 +16,12 @@ export function resetUserPassword(id, sendEmail = false) {
   return post(`/api/admin/users/${id}/reset-password`, { sendEmail });
 }
 
-export function getLeadReports() {
-  return get('/api/admin/reports/leads');
+export function getLeadReports(start, end) {
+  const params = new URLSearchParams();
+  if (start) params.set('start', start);
+  if (end) params.set('end', end);
+  const qs = params.toString();
+  return get(`/api/admin/reports/leads${qs ? `?${qs}` : ''}`);
 }
 
 export function getStats() {
