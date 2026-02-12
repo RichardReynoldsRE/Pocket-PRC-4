@@ -1,9 +1,16 @@
 import jwt from 'jsonwebtoken';
 import { query } from '../database.js';
 import { createError } from '../utils/errors.js';
-import { ROLE_HIERARCHY } from '../../../shared/roles.js';
-
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+
+const ROLE_HIERARCHY = {
+  super_admin: 6,
+  owner: 5,
+  team_lead: 4,
+  agent: 3,
+  transaction_coordinator: 2,
+  isa: 1,
+};
 
 export async function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
