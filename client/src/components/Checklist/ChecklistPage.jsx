@@ -33,6 +33,7 @@ export default function ChecklistPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(!id);
   const autoSaveTimer = useRef(null);
   const initialLoadDone = useRef(false);
+  const suppressDirty = useRef(false);
 
   const showToast = useCallback((message, type) => {
     setToast({ show: true, message, type });
@@ -46,6 +47,7 @@ export default function ChecklistPage() {
       .getById(id)
       .then((data) => {
         const record = data.checklist || data;
+        suppressDirty.current = true;
         loadChecklist(record.form_data || record);
         setStatus(record.status || 'draft');
         setLeadStatus(record.lead_status || null);
@@ -69,6 +71,10 @@ export default function ChecklistPage() {
 
   // Track unsaved changes after initial load
   useEffect(() => {
+    if (suppressDirty.current) {
+      suppressDirty.current = false;
+      return;
+    }
     if (id && !initialLoadDone.current) return; // skip until server data loaded
     if (initialLoadDone.current) {
       setHasUnsavedChanges(true);
@@ -187,6 +193,7 @@ export default function ChecklistPage() {
         property_address: formData.propertyAddress,
         form_data: formData,
       };
+      suppressDirty.current = true;
       if (id) {
         const result = await checklistsApi.update(id, payload);
         if (result.checklist?.form_data) {
