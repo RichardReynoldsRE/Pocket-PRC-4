@@ -30,7 +30,9 @@ export default function ChecklistPage() {
   const [suggestedFilename, setSuggestedFilename] = useState('');
   const [leadStatus, setLeadStatus] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(!id);
   const autoSaveTimer = useRef(null);
+  const initialLoadDone = useRef(false);
 
   const showToast = useCallback((message, type) => {
     setToast({ show: true, message, type });
@@ -48,6 +50,8 @@ export default function ChecklistPage() {
         setStatus(record.status || 'draft');
         setLeadStatus(record.lead_status || null);
         setLoadFailed(false);
+        setHasUnsavedChanges(false);
+        initialLoadDone.current = true;
       })
       .catch(() => {
         showToast('Failed to load checklist', 'error');
@@ -62,6 +66,15 @@ export default function ChecklistPage() {
       handleChange('completedBy', user.name);
     }
   }, [id, user?.name]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Track unsaved changes after initial load
+  useEffect(() => {
+    if (id && !initialLoadDone.current) return; // skip until server data loaded
+    if (initialLoadDone.current) {
+      setHasUnsavedChanges(true);
+      setGeneratedPdfBlob(null); // clear stale PDF when form changes
+    }
+  }, [formData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Generate suggested filename
   useEffect(() => {
@@ -185,6 +198,8 @@ export default function ChecklistPage() {
           navigate(`/checklist/${result.checklist.id}`, { replace: true });
         }
       }
+      setHasUnsavedChanges(false);
+      initialLoadDone.current = true;
       showToast('Checklist saved!', 'success');
     } catch {
       showToast('Failed to save checklist', 'error');
@@ -206,7 +221,7 @@ export default function ChecklistPage() {
   };
 
   const handleGeneratePdf = async () => {
-    if (!id) {
+    if (!id || hasUnsavedChanges) {
       showToast('Please save the checklist before generating a PDF', 'error');
       return;
     }
@@ -302,7 +317,7 @@ export default function ChecklistPage() {
         onGeneratePdf={handleGeneratePdf}
         suggestedFilename={suggestedFilename}
         showToast={showToast}
-        isSaved={!!id}
+        isSaved={!!id && !hasUnsavedChanges}
         checklistId={id}
         leadStatus={leadStatus}
       />

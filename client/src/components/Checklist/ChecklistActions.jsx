@@ -236,7 +236,7 @@ export default function ChecklistActions({
             title={!isSaved ? 'Save the checklist first' : 'Generate PDF'}
           >
             <FileText size={24} />
-            <span>{isSaved ? 'Generate PDF' : 'Save First to Generate PDF'}</span>
+            <span>{isSaved ? 'Generate PDF' : 'Save Changes to Generate PDF'}</span>
           </button>
 
           <button

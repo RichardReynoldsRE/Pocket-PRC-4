@@ -291,6 +291,19 @@ function LeadReport({ reports, periodLabel, onExport }) {
 
   return (
     <>
+      {/* Export Button */}
+      {reports.recent_sends.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={onExport}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-white rounded-lg shadow p-4 text-center">
@@ -444,6 +457,19 @@ function ChecklistReport({ reports, periodLabel, onExport }) {
 
   return (
     <>
+      {/* Export Button */}
+      {reports.checklists.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={onExport}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-3 mb-6">
         <div className="bg-white rounded-lg shadow p-4 text-center">

@@ -239,16 +239,27 @@ router.post('/users/:id/reset-password', async (req, res, next) => {
 // GET /stats - Dashboard statistics
 router.get('/stats', async (_req, res, next) => {
   try {
-    const [usersCount, checklistsCount, byStatus, recentActivity] = await Promise.all([
+    const [usersCount, checklistsCount, byStatus, teamsCount, leadsTotal, leadsByType, recentActivity] = await Promise.all([
       query('SELECT COUNT(*)::int AS count FROM users WHERE is_active = true'),
       query('SELECT COUNT(*)::int AS count FROM checklists'),
       query(
         `SELECT status, COUNT(*)::int AS count FROM checklists GROUP BY status`
       ),
+      query('SELECT COUNT(*)::int AS count FROM teams'),
       query(
-        `SELECT al.*, u.name AS user_name
+        `SELECT COUNT(*)::int AS count FROM activity_log
+         WHERE action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')`
+      ),
+      query(
+        `SELECT action, COUNT(*)::int AS count FROM activity_log
+         WHERE action IN ('lead_sent_mainland', 'rate_request_sent_anniemac')
+         GROUP BY action`
+      ),
+      query(
+        `SELECT al.*, u.name AS user_name, c.property_address
          FROM activity_log al
          LEFT JOIN users u ON al.user_id = u.id
+         LEFT JOIN checklists c ON al.checklist_id = c.id
          ORDER BY al.created_at DESC
          LIMIT 20`
       ),
@@ -259,10 +270,19 @@ router.get('/stats', async (_req, res, next) => {
       statusMap[row.status] = row.count;
     }
 
+    const leadsMap = {};
+    for (const row of leadsByType.rows) {
+      leadsMap[row.action] = row.count;
+    }
+
     res.json({
       stats: {
         total_users: usersCount.rows[0].count,
         total_checklists: checklistsCount.rows[0].count,
+        total_teams: teamsCount.rows[0].count,
+        total_leads: leadsTotal.rows[0].count,
+        mainland_leads: leadsMap.lead_sent_mainland || 0,
+        anniemac_leads: leadsMap.rate_request_sent_anniemac || 0,
         checklists_by_status: statusMap,
         recent_activity: recentActivity.rows,
       },
