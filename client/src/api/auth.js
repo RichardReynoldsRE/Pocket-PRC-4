@@ -19,3 +19,11 @@ export function getMe() {
 export function updateProfile(data) {
   return put('/api/auth/me', data);
 }
+
+export function forgotPassword(email) {
+  return post('/api/auth/forgot-password', { email });
+}
+
+export function resetPassword(token, password) {
+  return post('/api/auth/reset-password', { token, password });
+}

@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import crypto from 'node:crypto';
+import bcrypt from 'bcryptjs';
 import { query } from '../database.js';
 import { verifyToken, requireRole } from '../middleware/auth.js';
 import { createError } from '../utils/errors.js';
@@ -31,8 +33,8 @@ router.get('/branding', async (_req, res, next) => {
   }
 });
 
-// All remaining routes require auth + admin
-router.use(verifyToken, requireRole('owner'));
+// All remaining routes require auth + super_admin
+router.use(verifyToken, requireRole('super_admin'));
 
 // PUT /branding - Update default branding
 router.put('/branding', async (req, res, next) => {
@@ -99,8 +101,8 @@ router.put('/users/:id', async (req, res, next) => {
     const { role, is_active } = req.body;
     const { userId } = req.user;
 
-    // Cannot demote self
-    if (id === userId && role && role !== 'owner') {
+    // Cannot change own role
+    if (id === userId && role !== undefined) {
       throw createError('Cannot change your own role', 400);
     }
 
@@ -109,7 +111,7 @@ router.put('/users/:id', async (req, res, next) => {
     let paramIndex = 1;
 
     if (role !== undefined) {
-      const validRoles = ['owner', 'team_lead', 'agent', 'transaction_coordinator', 'isa'];
+      const validRoles = ['super_admin', 'owner', 'team_lead', 'agent', 'transaction_coordinator', 'isa'];
       if (!validRoles.includes(role)) {
         throw createError('Invalid role', 400);
       }
@@ -144,6 +146,60 @@ router.put('/users/:id', async (req, res, next) => {
     }
 
     res.json({ user: result.rows[0] });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /users/:id/reset-password - Force-reset a user's password
+router.post('/users/:id/reset-password', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { sendEmail } = req.body;
+
+    // Generate a secure temporary password
+    const tempPassword = crypto.randomBytes(4).toString('hex'); // 8 chars
+    const hash = await bcrypt.hash(tempPassword, 10);
+
+    const result = await query(
+      `UPDATE users SET password_hash = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id, name, email`,
+      [hash, id]
+    );
+
+    if (result.rows.length === 0) {
+      throw createError('User not found', 404);
+    }
+
+    const targetUser = result.rows[0];
+
+    // Optionally send the temp password via email
+    if (sendEmail && process.env.RESEND_API_KEY) {
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from: 'Pocket PRC <onboarding@resend.dev>',
+        to: [targetUser.email],
+        subject: 'Your Pocket PRC Password Has Been Reset',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+            <h2>Password Reset</h2>
+            <p>Hi ${targetUser.name},</p>
+            <p>Your password has been reset by an administrator. Your new temporary password is:</p>
+            <p style="font-size: 24px; font-weight: bold; background: #f3f4f6; padding: 16px; text-align: center; border-radius: 8px; letter-spacing: 2px;">${tempPassword}</p>
+            <p>Please log in and change your password immediately.</p>
+            <p style="color: #6b7280; font-size: 12px;">- Pocket PRC</p>
+          </div>
+        `,
+      });
+    }
+
+    res.json({
+      message: 'Password reset successfully',
+      tempPassword: sendEmail ? undefined : tempPassword,
+      emailSent: !!sendEmail,
+    });
   } catch (err) {
     next(err);
   }

@@ -1,4 +1,4 @@
-import { get, put } from './client';
+import { get, put, post } from './client';
 
 export function getUsers() {
   return get('/api/admin/users');
@@ -6,4 +6,8 @@ export function getUsers() {
 
 export function updateUser(id, data) {
   return put(`/api/admin/users/${id}`, data);
+}
+
+export function resetUserPassword(id, sendEmail = false) {
+  return post(`/api/admin/users/${id}/reset-password`, { sendEmail });
 }

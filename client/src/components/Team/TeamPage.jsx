@@ -28,8 +28,8 @@ export default function TeamPage() {
   // Derive canManage from members list, not auth context (which may have stale JWT role)
   const currentMember = members.find((m) => m.id === user?.id);
   const myRole = currentMember?.role || user?.role;
-  const canManage = ['owner', 'team_lead'].includes(myRole);
-  const isOwner = myRole === 'owner';
+  const canManage = ['super_admin', 'owner', 'team_lead'].includes(myRole);
+  const isOwner = myRole === 'owner' || myRole === 'super_admin';
 
   const showToast = (message, type) => {
     setToast({ show: true, message, type });

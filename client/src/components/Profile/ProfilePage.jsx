@@ -74,6 +74,8 @@ export default function ProfilePage() {
 
   const getRoleBadgeClass = (role) => {
     switch (role) {
+      case 'super_admin':
+        return 'bg-red-100 text-red-700';
       case 'owner':
         return 'bg-purple-100 text-purple-700';
       case 'team_lead':
@@ -89,6 +91,8 @@ export default function ProfilePage() {
 
   const getRoleLabel = (role) => {
     switch (role) {
+      case 'super_admin':
+        return 'Super Admin';
       case 'owner':
         return 'Owner';
       case 'team_lead':

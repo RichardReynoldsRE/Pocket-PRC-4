@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Palette, Users } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import BrandingSettings from './BrandingSettings';
 import UserManagement from './UserManagement';
 
@@ -9,7 +11,12 @@ const TABS = [
 ];
 
 export default function AdminPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('branding');
+
+  if (user?.role !== 'super_admin') {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-4">

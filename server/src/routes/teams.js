@@ -19,7 +19,8 @@ router.get('/', async (req, res, next) => {
     const teamId = userResult.rows[0]?.team_id;
 
     let result;
-    if (dbRole === 'owner') {
+    if (dbRole === 'super_admin') {
+      // super_admin sees all teams
       result = await query(
         `SELECT t.*, COUNT(u.id)::int AS member_count
          FROM teams t LEFT JOIN users u ON u.team_id = t.id AND u.is_active = true
@@ -104,11 +105,15 @@ router.put('/:id', async (req, res, next) => {
     const { userId } = req.user;
     const { name, brokerageName } = req.body;
 
-    // Verify owner/team_lead of this team (read from DB, not JWT)
+    // Verify access (read from DB, not JWT)
     const userResult = await query('SELECT team_id, role FROM users WHERE id = $1', [userId]);
     const callerUser = userResult.rows[0];
-    if (callerUser.team_id !== id || !['owner', 'team_lead'].includes(callerUser.role)) {
-      throw createError('Access denied', 403);
+
+    // super_admin can update any team
+    if (callerUser.role !== 'super_admin') {
+      if (callerUser.team_id !== id || !['owner', 'team_lead'].includes(callerUser.role)) {
+        throw createError('Access denied', 403);
+      }
     }
 
     const result = await query(
@@ -143,17 +148,22 @@ router.post('/:id/invite', async (req, res, next) => {
     }
 
     // Verify access (read from DB, not JWT)
-    const userResult = await query('SELECT team_id, role FROM users WHERE id = $1', [userId]);
+    const userResult = await query('SELECT team_id, role, name FROM users WHERE id = $1', [userId]);
     const callerUser = userResult.rows[0];
-    if (callerUser.team_id !== id || !['owner', 'team_lead'].includes(callerUser.role)) {
-      throw createError('Access denied', 403);
+
+    // super_admin can invite to any team
+    if (callerUser.role !== 'super_admin') {
+      if (callerUser.team_id !== id || !['owner', 'team_lead'].includes(callerUser.role)) {
+        throw createError('Access denied', 403);
+      }
     }
 
-    const teamExists = await query('SELECT id FROM teams WHERE id = $1', [id]);
-    if (teamExists.rows.length === 0) {
+    const teamResult = await query('SELECT id, name FROM teams WHERE id = $1', [id]);
+    if (teamResult.rows.length === 0) {
       throw createError('Team not found', 404);
     }
 
+    const teamName = teamResult.rows[0].name;
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -164,13 +174,47 @@ router.post('/:id/invite', async (req, res, next) => {
       [id, email.toLowerCase(), userId, inviteRole || 'agent', token, expiresAt]
     );
 
+    const inviteLink = `${process.env.APP_URL || 'http://localhost:5173'}/register?invite=${token}`;
+
+    // Send invite email via Resend
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const { Resend } = await import('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const inviterName = callerUser.name || 'A team member';
+
+        await resend.emails.send({
+          from: 'Pocket PRC <onboarding@resend.dev>',
+          to: [email.toLowerCase()],
+          subject: `${inviterName} invited you to join ${teamName} on Pocket PRC`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+              <h2 style="color: #b91c1c;">You've Been Invited!</h2>
+              <p>${inviterName} has invited you to join <strong>${teamName}</strong> on Pocket PRC.</p>
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${inviteLink}" style="background: #b91c1c; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                  Accept Invitation
+                </a>
+              </div>
+              <p style="color: #6b7280; font-size: 13px;">This invitation expires in 7 days.</p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+              <p style="color: #9ca3af; font-size: 11px;">If the button does not work, copy and paste this URL into your browser:<br/>${inviteLink}</p>
+            </div>
+          `,
+        });
+      } catch (emailErr) {
+        console.error('Failed to send invite email:', emailErr.message);
+        // Don't fail the request -- invite was created, email is best-effort
+      }
+    }
+
     res.status(201).json({
       invite: {
         id: result.rows[0].id,
         email: result.rows[0].email,
         token,
         expires_at: result.rows[0].expires_at,
-        link: `${process.env.APP_URL || 'http://localhost:5173'}/register?invite=${token}`,
+        link: inviteLink,
       },
     });
   } catch (err) {
@@ -205,8 +249,12 @@ router.delete('/:id/members/:memberId', async (req, res, next) => {
     // Verify access (read from DB, not JWT)
     const userResult = await query('SELECT team_id, role FROM users WHERE id = $1', [userId]);
     const callerUser = userResult.rows[0];
-    if (callerUser.team_id !== id || !['owner', 'team_lead'].includes(callerUser.role)) {
-      throw createError('Access denied', 403);
+
+    // super_admin can remove from any team
+    if (callerUser.role !== 'super_admin') {
+      if (callerUser.team_id !== id || !['owner', 'team_lead'].includes(callerUser.role)) {
+        throw createError('Access denied', 403);
+      }
     }
 
     // Cannot remove yourself
@@ -239,11 +287,15 @@ router.put('/:id/members/:memberId/role', async (req, res, next) => {
     // Verify caller is owner or team_lead of this team (read from DB, not JWT)
     const callerResult = await query('SELECT team_id, role FROM users WHERE id = $1', [userId]);
     const callerUser = callerResult.rows[0];
-    if (callerUser.team_id !== id || !['owner', 'team_lead'].includes(callerUser.role)) {
-      throw createError('Access denied', 403);
+
+    // super_admin can change roles on any team
+    if (callerUser.role !== 'super_admin') {
+      if (callerUser.team_id !== id || !['owner', 'team_lead'].includes(callerUser.role)) {
+        throw createError('Access denied', 403);
+      }
     }
 
-    const validRoles = ['owner', 'team_lead', 'agent', 'transaction_coordinator', 'isa'];
+    const validRoles = ['super_admin', 'owner', 'team_lead', 'agent', 'transaction_coordinator', 'isa'];
     if (!role || !validRoles.includes(role)) {
       throw createError('Invalid role', 400);
     }
@@ -274,11 +326,14 @@ router.post('/:id/transfer-ownership', async (req, res, next) => {
       throw createError('newOwnerId is required', 400);
     }
 
-    // Verify caller is owner of this team
+    // Verify caller is owner of this team or super_admin
     const callerResult = await query('SELECT team_id, role FROM users WHERE id = $1', [userId]);
     const caller = callerResult.rows[0];
-    if (caller.team_id !== id || caller.role !== 'owner') {
-      throw createError('Only the team owner can transfer ownership', 403);
+
+    if (caller.role !== 'super_admin') {
+      if (caller.team_id !== id || caller.role !== 'owner') {
+        throw createError('Only the team owner can transfer ownership', 403);
+      }
     }
 
     // Verify target is on this team
@@ -287,9 +342,11 @@ router.post('/:id/transfer-ownership', async (req, res, next) => {
       throw createError('User not found in this team', 404);
     }
 
-    // Transfer: promote target to owner, demote caller to team_lead
+    // Transfer: promote target to owner, demote caller to team_lead (unless super_admin)
     await query('UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2', ['owner', newOwnerId]);
-    await query('UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2', ['team_lead', userId]);
+    if (caller.role !== 'super_admin') {
+      await query('UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2', ['team_lead', userId]);
+    }
 
     res.json({ message: 'Ownership transferred successfully' });
   } catch (err) {
@@ -303,11 +360,14 @@ router.delete('/:id', async (req, res, next) => {
     const { id } = req.params;
     const { userId } = req.user;
 
-    // Verify caller is owner of this team
+    // Verify caller is owner of this team or super_admin
     const callerResult = await query('SELECT team_id, role FROM users WHERE id = $1', [userId]);
     const caller = callerResult.rows[0];
-    if (caller.team_id !== id || caller.role !== 'owner') {
-      throw createError('Only the team owner can delete the team', 403);
+
+    if (caller.role !== 'super_admin') {
+      if (caller.team_id !== id || caller.role !== 'owner') {
+        throw createError('Only the team owner can delete the team', 403);
+      }
     }
 
     // Remove all members from the team (set team_id to null, reset to agent role)

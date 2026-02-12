@@ -1,4 +1,5 @@
 export const ROLES = {
+  SUPER_ADMIN: 'super_admin',
   OWNER: 'owner',
   TEAM_LEAD: 'team_lead',
   AGENT: 'agent',
@@ -7,6 +8,7 @@ export const ROLES = {
 };
 
 export const ROLE_HIERARCHY = {
+  super_admin: 6,
   owner: 5,
   team_lead: 4,
   agent: 3,
@@ -19,6 +21,7 @@ export function hasRole(userRole, requiredRole) {
 }
 
 export const ROLE_LABELS = {
+  super_admin: 'Super Admin',
   owner: 'Owner',
   team_lead: 'Team Lead',
   agent: 'Agent',

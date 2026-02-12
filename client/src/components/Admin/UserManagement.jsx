@@ -4,6 +4,7 @@ import * as adminApi from '../../api/admin';
 import StatusToast from '../Shared/StatusToast';
 
 const ROLE_LABELS = {
+  super_admin: 'Super Admin',
   owner: 'Owner',
   team_lead: 'Team Lead',
   agent: 'Agent',
@@ -12,6 +13,7 @@ const ROLE_LABELS = {
 };
 
 const ROLE_BADGE_STYLES = {
+  super_admin: 'bg-red-100 text-red-800',
   owner: 'bg-purple-100 text-purple-800',
   team_lead: 'bg-yellow-100 text-yellow-800',
   agent: 'bg-blue-100 text-blue-800',
@@ -95,6 +97,27 @@ export default function UserManagement() {
     }
   }
 
+  async function handleResetPassword(userId) {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    if (!window.confirm(`Reset password for ${user.name}?`)) return;
+
+    try {
+      const data = await adminApi.resetUserPassword(userId, false);
+      if (data.tempPassword) {
+        window.prompt(
+          `Temporary password for ${user.name}. Copy it now:`,
+          data.tempPassword
+        );
+      }
+      showToast(`Password reset for ${user.name}`, 'success');
+    } catch (error) {
+      showToast('Failed to reset password', 'error');
+      console.error('Error resetting password:', error);
+    }
+  }
+
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow p-6 text-center text-gray-400">
@@ -155,6 +178,7 @@ export default function UserManagement() {
                       onChange={(e) => handleRoleChange(user.id, e.target.value)}
                       className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
                     >
+                      <option value="super_admin">Super Admin</option>
                       <option value="owner">Owner</option>
                       <option value="team_lead">Team Lead</option>
                       <option value="agent">Agent</option>
@@ -177,14 +201,22 @@ export default function UserManagement() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleToggleActive(user.id)}
-                      className={`text-sm font-medium action-button ${
-                        user.is_active ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'
-                      }`}
-                    >
-                      {user.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleResetPassword(user.id)}
+                        className="text-sm font-medium action-button text-blue-600 hover:text-blue-700"
+                      >
+                        Reset PW
+                      </button>
+                      <button
+                        onClick={() => handleToggleActive(user.id)}
+                        className={`text-sm font-medium action-button ${
+                          user.is_active ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'
+                        }`}
+                      >
+                        {user.is_active ? 'Deactivate' : 'Activate'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

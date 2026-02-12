@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { query } from '../database.js';
 import { createError } from '../utils/errors.js';
+import { ROLE_HIERARCHY } from '../../shared/roles.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
@@ -40,6 +41,20 @@ export function requireRole(...roles) {
       return next(createError('Authentication required', 401));
     }
     if (!roles.includes(req.user.role)) {
+      return next(createError('Insufficient permissions', 403));
+    }
+    next();
+  };
+}
+
+export function requireMinRole(minRole) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(createError('Authentication required', 401));
+    }
+    const userLevel = ROLE_HIERARCHY[req.user.role] || 0;
+    const requiredLevel = ROLE_HIERARCHY[minRole] || 0;
+    if (userLevel < requiredLevel) {
       return next(createError('Insufficient permissions', 403));
     }
     next();

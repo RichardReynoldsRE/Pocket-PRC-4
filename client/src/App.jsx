@@ -4,6 +4,8 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import LoginPage from './components/Auth/LoginPage';
 import RegisterPage from './components/Auth/RegisterPage';
+import ForgotPasswordPage from './components/Auth/ForgotPasswordPage';
+import ResetPasswordPage from './components/Auth/ResetPasswordPage';
 import AppShell from './components/Layout/AppShell';
 import DashboardPage from './components/Dashboard/DashboardPage';
 import ChecklistPage from './components/Checklist/ChecklistPage';
@@ -20,6 +22,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
               <Route path="/" element={<DashboardPage />} />

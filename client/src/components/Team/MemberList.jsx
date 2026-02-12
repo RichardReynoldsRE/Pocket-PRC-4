@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Trash2, Shield, Crown, User } from 'lucide-react';
 
 const ROLE_STYLES = {
+  super_admin: 'bg-red-100 text-red-800',
   owner: 'bg-purple-100 text-purple-800',
   team_lead: 'bg-yellow-100 text-yellow-800',
   agent: 'bg-blue-100 text-blue-800',
@@ -10,6 +11,7 @@ const ROLE_STYLES = {
 };
 
 const ROLE_LABELS = {
+  super_admin: 'Super Admin',
   owner: 'Owner',
   team_lead: 'Team Lead',
   agent: 'Agent',
