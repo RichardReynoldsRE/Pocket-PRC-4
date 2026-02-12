@@ -23,6 +23,7 @@ const ROLE_BADGE_STYLES = {
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
 
@@ -32,16 +33,20 @@ export default function UserManagement() {
   };
 
   useEffect(() => {
-    loadUsers();
+    loadData();
   }, []);
 
-  async function loadUsers() {
+  async function loadData() {
     try {
-      const data = await adminApi.getUsers();
-      setUsers(data.users || []);
+      const [usersData, teamsData] = await Promise.all([
+        adminApi.getUsers(),
+        adminApi.getTeams(),
+      ]);
+      setUsers(usersData.users || []);
+      setTeams(teamsData.teams || []);
     } catch (error) {
-      showToast('Failed to load users', 'error');
-      console.error('Error loading users:', error);
+      showToast('Failed to load data', 'error');
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
@@ -94,6 +99,30 @@ export default function UserManagement() {
       setUsers(previousUsers);
       showToast(`Failed to ${newStatus ? 'activate' : 'deactivate'} user`, 'error');
       console.error('Error toggling user status:', error);
+    }
+  }
+
+  async function handleTeamChange(userId, newTeamId) {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    const teamId = newTeamId === '' ? null : newTeamId;
+    const previousUsers = [...users];
+    const teamName = teamId ? teams.find(t => t.id === teamId)?.name : null;
+    setUsers(users.map(u => u.id === userId ? { ...u, team_id: teamId, team_name: teamName } : u));
+
+    try {
+      await adminApi.updateUser(userId, { team_id: teamId });
+      showToast(
+        teamId
+          ? `Added ${user.name} to ${teamName}`
+          : `Removed ${user.name} from team`,
+        'success'
+      );
+    } catch (error) {
+      setUsers(previousUsers);
+      showToast('Failed to update team', 'error');
+      console.error('Error updating team:', error);
     }
   }
 
@@ -186,8 +215,17 @@ export default function UserManagement() {
                       <option value="isa">ISA</option>
                     </select>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 hidden sm:table-cell">
-                    {user.team_name || '-'}
+                  <td className="px-4 py-3 hidden sm:table-cell">
+                    <select
+                      value={user.team_id || ''}
+                      onChange={(e) => handleTeamChange(user.id, e.target.value)}
+                      className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
+                    >
+                      <option value="">No Team</option>
+                      {teams.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
                   </td>
                   <td className="px-4 py-3">
                     <span

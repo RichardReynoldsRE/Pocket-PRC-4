@@ -4,8 +4,14 @@ export function login(email, password) {
   return post('/api/auth/login', { email, password });
 }
 
-export function register(name, email, password) {
-  return post('/api/auth/register', { name, email, password });
+export function register(name, email, password, inviteToken) {
+  const body = { name, email, password };
+  if (inviteToken) body.inviteToken = inviteToken;
+  return post('/api/auth/register', body);
+}
+
+export function acceptInvite(inviteToken) {
+  return post('/api/auth/accept-invite', { inviteToken });
 }
 
 export function refreshToken() {

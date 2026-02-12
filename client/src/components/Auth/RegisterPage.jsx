@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import Logo from '../Shared/Logo';
@@ -8,6 +8,8 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const { brandConfig } = useTheme();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,7 +32,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register(name, email, password);
+      await register(name, email, password, inviteToken || undefined);
       navigate('/');
     } catch (err) {
       setError(err.message || 'Registration failed');
@@ -47,12 +49,20 @@ export default function RegisterPage() {
       >
         <div className="mx-auto mb-3 w-fit"><Logo size={64} /></div>
         <h1 className="text-2xl font-bold">{brandConfig.app_name || 'Pocket PRC'}</h1>
-        <p className="text-sm opacity-75 mt-1">Create your account</p>
+        <p className="text-sm opacity-75 mt-1">
+          {inviteToken ? 'Join your team' : 'Create your account'}
+        </p>
       </div>
 
       <div className="flex-1 flex items-start justify-center p-6">
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
           <h2 className="text-xl font-bold text-gray-800 text-center">Register</h2>
+
+          {inviteToken && (
+            <div className="bg-blue-50 text-blue-700 text-sm p-3 rounded-lg border border-blue-200">
+              You've been invited to join a team! Create an account to get started.
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg border border-red-200">
@@ -119,8 +129,12 @@ export default function RegisterPage() {
 
           <p className="text-center text-sm text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold" style={{ color: 'var(--brand-primary)' }}>
-              Sign In
+            <Link
+              to={inviteToken ? `/login?invite=${inviteToken}` : '/login'}
+              className="font-semibold"
+              style={{ color: 'var(--brand-primary)' }}
+            >
+              Sign in{inviteToken ? ' to join the team' : ''}
             </Link>
           </p>
         </form>

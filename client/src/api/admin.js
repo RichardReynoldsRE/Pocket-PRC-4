@@ -1,5 +1,9 @@
 import { get, put, post } from './client';
 
+export function getTeams() {
+  return get('/api/admin/teams');
+}
+
 export function getUsers() {
   return get('/api/admin/users');
 }

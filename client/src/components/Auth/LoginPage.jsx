@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { acceptInvite } from '../../api/auth';
 import Logo from '../Shared/Logo';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, updateUser } = useAuth();
   const { brandConfig } = useTheme();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,6 +22,17 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
+
+      // If there's an invite token, accept it after login
+      if (inviteToken) {
+        try {
+          const data = await acceptInvite(inviteToken);
+          if (data.user) updateUser(data.user);
+        } catch {
+          // If invite fails (expired, already used), still proceed with login
+        }
+      }
+
       navigate('/');
     } catch (err) {
       setError(err.message || 'Login failed');
@@ -41,6 +55,12 @@ export default function LoginPage() {
       <div className="flex-1 flex items-start justify-center p-6">
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
           <h2 className="text-xl font-bold text-gray-800 text-center">Sign In</h2>
+
+          {inviteToken && (
+            <div className="bg-blue-50 text-blue-700 text-sm p-3 rounded-lg border border-blue-200">
+              Sign in to join your team!
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg border border-red-200">
@@ -93,7 +113,11 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-600">
             Don&apos;t have an account?{' '}
-            <Link to="/register" className="font-semibold" style={{ color: 'var(--brand-primary)' }}>
+            <Link
+              to={inviteToken ? `/register?invite=${inviteToken}` : '/register'}
+              className="font-semibold"
+              style={{ color: 'var(--brand-primary)' }}
+            >
               Register
             </Link>
           </p>

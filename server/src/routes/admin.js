@@ -77,6 +77,18 @@ router.put('/branding', async (req, res, next) => {
   }
 });
 
+// GET /teams - List all teams (for admin dropdowns)
+router.get('/teams', async (_req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT id, name FROM teams ORDER BY name`
+    );
+    res.json({ teams: result.rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /users - List all users
 router.get('/users', async (_req, res, next) => {
   try {
@@ -98,7 +110,7 @@ router.get('/users', async (_req, res, next) => {
 router.put('/users/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { role, is_active } = req.body;
+    const { role, is_active, team_id } = req.body;
     const { userId } = req.user;
 
     // Cannot change own role
@@ -128,6 +140,18 @@ router.put('/users/:id', async (req, res, next) => {
       values.push(is_active);
     }
 
+    if (team_id !== undefined) {
+      // null means remove from team
+      if (team_id !== null) {
+        const teamResult = await query('SELECT id FROM teams WHERE id = $1', [team_id]);
+        if (teamResult.rows.length === 0) {
+          throw createError('Team not found', 404);
+        }
+      }
+      updates.push(`team_id = $${paramIndex++}`);
+      values.push(team_id);
+    }
+
     if (updates.length === 0) {
       throw createError('No fields to update', 400);
     }
@@ -135,15 +159,22 @@ router.put('/users/:id', async (req, res, next) => {
     updates.push(`updated_at = NOW()`);
     values.push(id);
 
-    const result = await query(
-      `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex}
-       RETURNING id, name, email, role, team_id, is_active, created_at`,
+    const updateResult = await query(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING id`,
       values
     );
 
-    if (result.rows.length === 0) {
+    if (updateResult.rows.length === 0) {
       throw createError('User not found', 404);
     }
+
+    // Return full user with team name
+    const result = await query(
+      `SELECT u.id, u.name, u.email, u.role, u.team_id, u.is_active, u.created_at, t.name AS team_name
+       FROM users u LEFT JOIN teams t ON u.team_id = t.id
+       WHERE u.id = $1`,
+      [id]
+    );
 
     res.json({ user: result.rows[0] });
   } catch (err) {

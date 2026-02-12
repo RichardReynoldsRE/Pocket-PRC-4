@@ -313,6 +313,49 @@ router.post('/reset-password', async (req, res, next) => {
   }
 });
 
+// POST /accept-invite - Accept a team invite (for existing users)
+router.post('/accept-invite', verifyToken, async (req, res, next) => {
+  try {
+    const { inviteToken } = req.body;
+    const { userId } = req.user;
+
+    if (!inviteToken) {
+      throw createError('Invite token is required', 400);
+    }
+
+    const invite = await query(
+      `SELECT * FROM team_invites
+       WHERE token = $1 AND accepted_at IS NULL AND expires_at > NOW()`,
+      [inviteToken]
+    );
+
+    if (invite.rows.length === 0) {
+      throw createError('Invalid or expired invite token', 400);
+    }
+
+    const inv = invite.rows[0];
+
+    // Update user's team and role
+    await query(
+      `UPDATE users SET team_id = $1, role = $2, updated_at = NOW() WHERE id = $3`,
+      [inv.team_id, inv.role || 'agent', userId]
+    );
+
+    // Mark invite as accepted
+    await query(
+      'UPDATE team_invites SET accepted_at = NOW() WHERE id = $1',
+      [inv.id]
+    );
+
+    // Return updated user
+    const result = await query('SELECT * FROM users WHERE id = $1', [userId]);
+
+    res.json({ user: sanitizeUser(result.rows[0]) });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /me
 router.get('/me', verifyToken, async (req, res, next) => {
   try {
