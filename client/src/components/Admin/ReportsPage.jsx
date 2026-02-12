@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Send, TrendingDown, Trophy, Clock, User, ArrowLeft, MapPin, CalendarDays } from 'lucide-react';
+import { BarChart3, Send, TrendingDown, Trophy, Clock, User, ArrowLeft, MapPin, Download } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import * as adminApi from '../../api/admin';
 import LoadingSpinner from '../Shared/LoadingSpinner';
@@ -101,6 +101,41 @@ export default function ReportsPage() {
       ? new Date(customEnd + 'T23:59:59.999Z').toISOString()
       : null;
     loadReports(start, end);
+  };
+
+  const handleExportCsv = () => {
+    if (!reports || reports.recent_sends.length === 0) return;
+
+    const rows = reports.recent_sends.map((send) => ({
+      Date: new Date(send.created_at).toLocaleDateString('en-US'),
+      Time: new Date(send.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      Agent: send.user_name,
+      Property: send.property_address || '',
+      Partner: send.action === 'lead_sent_mainland' ? 'Mainland Title' : 'Annie Mac',
+    }));
+
+    const headers = Object.keys(rows[0]);
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) =>
+        headers.map((h) => {
+          const val = String(row[h]).replace(/"/g, '""');
+          return val.includes(',') || val.includes('"') ? `"${val}"` : val;
+        }).join(',')
+      ),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const label = PERIODS.find(p => p.key === period)?.label || 'all-time';
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.download = `lead-reports_${label.toLowerCase().replace(/\s+/g, '-')}_${dateStr}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const formatDate = (dateString) => {
@@ -280,9 +315,20 @@ export default function ReportsPage() {
                 <Clock size={18} className="text-gray-500" />
                 All Leads Sent
               </h2>
-              <span className="text-xs text-gray-400">
-                {reports.recent_sends.length} lead{reports.recent_sends.length !== 1 ? 's' : ''} &middot; {periodLabel}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-400">
+                  {reports.recent_sends.length} lead{reports.recent_sends.length !== 1 ? 's' : ''} &middot; {periodLabel}
+                </span>
+                {reports.recent_sends.length > 0 && (
+                  <button
+                    onClick={handleExportCsv}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+                  >
+                    <Download size={12} />
+                    Export CSV
+                  </button>
+                )}
+              </div>
             </div>
             {reports.recent_sends.length === 0 ? (
               <div className="p-8 text-center text-gray-400">
