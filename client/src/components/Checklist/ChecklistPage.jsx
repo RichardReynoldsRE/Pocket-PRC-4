@@ -204,6 +204,10 @@ export default function ChecklistPage() {
   };
 
   const handleGeneratePdf = async () => {
+    if (!id) {
+      showToast('Please save the checklist before generating a PDF', 'error');
+      return;
+    }
     showToast('Generating PDF...', 'success');
     try {
       const result = await generatePRC(formData);
@@ -296,6 +300,7 @@ export default function ChecklistPage() {
         onGeneratePdf={handleGeneratePdf}
         suggestedFilename={suggestedFilename}
         showToast={showToast}
+        isSaved={!!id}
       />
 
       <StatusToast message={toast.message} type={toast.type} show={toast.show} />

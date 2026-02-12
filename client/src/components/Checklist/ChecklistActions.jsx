@@ -89,6 +89,7 @@ export default function ChecklistActions({
   onGeneratePdf,
   suggestedFilename,
   showToast,
+  isSaved,
 }) {
   const isNative = Capacitor.isNativePlatform();
   const [showLeadModal, setShowLeadModal] = useState(false);
@@ -222,10 +223,16 @@ export default function ChecklistActions({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             onClick={onGeneratePdf}
-            className="action-button bg-yellow-400 text-gray-900 px-6 py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-yellow-300 transition-colors shadow-lg"
+            disabled={!isSaved}
+            className={`action-button px-6 py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors shadow-lg ${
+              isSaved
+                ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-300'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+            title={!isSaved ? 'Save the checklist first' : 'Generate PDF'}
           >
             <FileText size={24} />
-            <span>Generate PDF</span>
+            <span>{isSaved ? 'Generate PDF' : 'Save First to Generate PDF'}</span>
           </button>
 
           <button
