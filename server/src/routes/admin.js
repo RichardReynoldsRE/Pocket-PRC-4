@@ -357,4 +357,83 @@ router.get('/reports/leads', async (req, res, next) => {
   }
 });
 
+// GET /reports/checklists - Checklist creation analytics with optional date range
+router.get('/reports/checklists', async (req, res, next) => {
+  try {
+    const { start, end } = req.query;
+
+    let dateFilter = '';
+    const dateParams = [];
+    let paramIdx = 1;
+
+    if (start) {
+      dateFilter += ` AND c.created_at >= $${paramIdx}`;
+      dateParams.push(start);
+      paramIdx++;
+    }
+    if (end) {
+      dateFilter += ` AND c.created_at < $${paramIdx}`;
+      dateParams.push(end);
+      paramIdx++;
+    }
+
+    const [
+      totals,
+      byStatus,
+      leaderboard,
+      recentChecklists,
+    ] = await Promise.all([
+      query(
+        `SELECT COUNT(*)::int AS count FROM checklists c WHERE 1=1${dateFilter}`,
+        dateParams
+      ),
+      query(
+        `SELECT c.status, COUNT(*)::int AS count FROM checklists c
+         WHERE 1=1${dateFilter}
+         GROUP BY c.status`,
+        dateParams
+      ),
+      query(
+        `SELECT u.id, u.name, u.email, u.avatar_url,
+                COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE c.status = 'completed')::int AS completed,
+                COUNT(*) FILTER (WHERE c.status = 'in_progress')::int AS in_progress,
+                COUNT(*) FILTER (WHERE c.status = 'draft')::int AS drafts
+         FROM checklists c
+         JOIN users u ON c.owner_id = u.id
+         WHERE 1=1${dateFilter}
+         GROUP BY u.id, u.name, u.email, u.avatar_url
+         ORDER BY total DESC`,
+        dateParams
+      ),
+      query(
+        `SELECT c.id, c.property_address, c.status, c.created_at, c.completed_at,
+                u.name AS owner_name
+         FROM checklists c
+         JOIN users u ON c.owner_id = u.id
+         WHERE 1=1${dateFilter}
+         ORDER BY c.created_at DESC
+         LIMIT 200`,
+        dateParams
+      ),
+    ]);
+
+    const statusMap = {};
+    for (const row of byStatus.rows) {
+      statusMap[row.status] = row.count;
+    }
+
+    res.json({
+      reports: {
+        total: totals.rows[0].count,
+        by_status: statusMap,
+        leaderboard: leaderboard.rows,
+        checklists: recentChecklists.rows,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
