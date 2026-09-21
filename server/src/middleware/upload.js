@@ -1,25 +1,6 @@
 import multer from 'multer';
-import { join } from 'node:path';
-import { mkdirSync } from 'node:fs';
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
-
-// Ensure upload directory exists
-try {
-  mkdirSync(UPLOAD_DIR, { recursive: true });
-} catch {
-  // directory already exists
-}
-
-const storage = multer.diskStorage({
-  destination(_req, _file, cb) {
-    cb(null, UPLOAD_DIR);
-  },
-  filename(_req, file, cb) {
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    cb(null, `${Date.now()}-${safeName}`);
-  },
-});
+const storage = multer.memoryStorage();
 
 function fileFilter(_req, file, cb) {
   const allowedTypes = [

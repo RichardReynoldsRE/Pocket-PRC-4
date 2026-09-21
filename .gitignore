@@ -20,3 +20,9 @@ Thumbs.db
 
 # Build artifacts
 *.tgz
+
+# Windows alternate-data-stream leftovers from copies out of Explorer
+*:Zone.Identifier
+# stray brand thumbnails dropped in the root
+/thumb_*.png
+/name-side_edited*

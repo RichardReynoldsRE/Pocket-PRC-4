@@ -4,6 +4,7 @@ import { FileEdit, Clock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import useChecklist from '../../hooks/useChecklist';
 import * as checklistsApi from '../../api/checklists';
+import * as attachmentsApi from '../../api/attachments';
 import { saveChecklist as saveToIdb } from '../../lib/db';
 import { generatePRC } from './PdfGenerator';
 import PropertyAddress from './sections/PropertyAddress';
@@ -31,6 +32,8 @@ export default function ChecklistPage() {
   const [leadStatus, setLeadStatus] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(!id);
+  const [serverAttachments, setServerAttachments] = useState([]);
+  const [pendingFiles, setPendingFiles] = useState([]);
   const autoSaveTimer = useRef(null);
   const initialLoadDone = useRef(false);
   const suppressDirty = useRef(false);
@@ -51,6 +54,7 @@ export default function ChecklistPage() {
         loadChecklist(record.form_data || record);
         setStatus(record.status || 'draft');
         setLeadStatus(record.lead_status || null);
+        setServerAttachments(record.attachments || []);
         setLoadFailed(false);
         setHasUnsavedChanges(false);
         initialLoadDone.current = true;
@@ -75,10 +79,10 @@ export default function ChecklistPage() {
       suppressDirty.current = false;
       return;
     }
-    if (id && !initialLoadDone.current) return; // skip until server data loaded
+    if (id && !initialLoadDone.current) return;
     if (initialLoadDone.current) {
       setHasUnsavedChanges(true);
-      setGeneratedPdfBlob(null); // clear stale PDF when form changes
+      setGeneratedPdfBlob(null);
     }
   }, [formData]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -90,11 +94,12 @@ export default function ChecklistPage() {
     setSuggestedFilename(`PRC_${clean}_${date}.pdf`);
   }, [formData.propertyAddress]);
 
-  // Auto-save to IndexedDB on changes (debounced)
+  // Auto-save to IndexedDB on changes (debounced) — exclude attachments from IDB
   useEffect(() => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
-      saveToIdb({ id: id || 'draft', form_data: formData }).catch(() => {});
+      const { attachments, ...formWithoutAttachments } = formData;
+      saveToIdb({ id: id || 'draft', form_data: formWithoutAttachments }).catch(() => {});
     }, 2000);
     return () => clearTimeout(autoSaveTimer.current);
   }, [formData, id]);
@@ -102,7 +107,8 @@ export default function ChecklistPage() {
   // Listen for save/load events from Header
   useEffect(() => {
     const handleSaveEvent = () => {
-      const dataStr = JSON.stringify(formData, null, 2);
+      const { attachments, ...exportData } = formData;
+      const dataStr = JSON.stringify(exportData, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
       let filename = formData.propertyAddress
         ? formData.propertyAddress.replace(/[^a-z0-9]/gi, '_').toLowerCase()
@@ -136,64 +142,55 @@ export default function ChecklistPage() {
     };
   }, [formData, loadChecklist, showToast]);
 
+  // Add pending files (raw File objects)
   const handleFileUpload = useCallback(
     (event) => {
       const files = Array.from(event.target.files);
-      let processed = 0;
-      files.forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setFormData((prev) => ({
-            ...prev,
-            attachments: [
-              ...prev.attachments,
-              { name: file.name, data: e.target.result, type: file.type, size: file.size },
-            ],
-          }));
-          processed++;
-          if (processed === files.length) {
-            showToast(`Added ${files.length} file(s)`, 'success');
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+      if (files.length === 0) return;
+      setPendingFiles((prev) => [...prev, ...files]);
+      setHasUnsavedChanges(true);
+      setGeneratedPdfBlob(null);
+      showToast(`Added ${files.length} file(s)`, 'success');
     },
-    [setFormData, showToast]
+    [showToast]
   );
 
+  // Remove attachment — either pending file or server attachment
   const handleRemoveAttachment = useCallback(
-    (index) => {
-      setFormData((prev) => ({
-        ...prev,
-        attachments: prev.attachments.filter((_, i) => i !== index),
-      }));
-      showToast('File removed', 'success');
+    async (index) => {
+      // First check if it's a server attachment
+      if (index < serverAttachments.length) {
+        const att = serverAttachments[index];
+        try {
+          await attachmentsApi.remove(att.id);
+          setServerAttachments((prev) => prev.filter((_, i) => i !== index));
+          showToast('File removed', 'success');
+        } catch {
+          showToast('Failed to remove file', 'error');
+        }
+      } else {
+        // It's a pending file
+        const pendingIndex = index - serverAttachments.length;
+        setPendingFiles((prev) => prev.filter((_, i) => i !== pendingIndex));
+        showToast('File removed', 'success');
+      }
     },
-    [setFormData, showToast]
-  );
-
-  const handleRenameAttachment = useCallback(
-    (index, newName) => {
-      if (!newName || !newName.trim()) return;
-      setFormData((prev) => ({
-        ...prev,
-        attachments: prev.attachments.map((att, i) =>
-          i === index ? { ...att, name: newName.trim() } : att
-        ),
-      }));
-      showToast('File renamed', 'success');
-    },
-    [setFormData, showToast]
+    [serverAttachments, showToast]
   );
 
   const handleSaveToApi = async () => {
     setSaving(true);
     try {
+      // Strip legacy base64 attachments from form_data before saving
+      const { attachments: _legacyAttachments, ...cleanFormData } = formData;
       const payload = {
         property_address: formData.propertyAddress,
-        form_data: formData,
+        form_data: { ...cleanFormData, attachments: [] },
       };
+
       suppressDirty.current = true;
+      let checklistId = id;
+
       if (id) {
         const result = await checklistsApi.update(id, payload);
         if (result.checklist?.form_data) {
@@ -202,9 +199,22 @@ export default function ChecklistPage() {
       } else {
         const result = await checklistsApi.create(payload);
         if (result.checklist?.id) {
-          navigate(`/checklist/${result.checklist.id}`, { replace: true });
+          checklistId = result.checklist.id;
+          navigate(`/checklist/${checklistId}`, { replace: true });
         }
       }
+
+      // Upload pending files to R2
+      if (pendingFiles.length > 0 && checklistId) {
+        try {
+          const uploadResult = await attachmentsApi.upload(checklistId, pendingFiles);
+          setServerAttachments((prev) => [...prev, ...(uploadResult.attachments || [])]);
+          setPendingFiles([]);
+        } catch {
+          showToast('Checklist saved but some files failed to upload', 'error');
+        }
+      }
+
       setHasUnsavedChanges(false);
       initialLoadDone.current = true;
       showToast('Checklist saved!', 'success');
@@ -234,12 +244,12 @@ export default function ChecklistPage() {
     }
     showToast('Generating PDF...', 'success');
     try {
-      const result = await generatePRC(formData);
+      const result = await generatePRC(formData, serverAttachments);
       setGeneratedPdfBlob(result.blob);
 
       const attachText =
-        formData.attachments.length > 0
-          ? ` with ${formData.attachments.length} attachment(s)`
+        serverAttachments.length > 0
+          ? ` with ${serverAttachments.length} attachment(s)`
           : '';
       showToast(`PDF generated${attachText}! Use Save or Share below.`, 'success');
     } catch {
@@ -253,6 +263,25 @@ export default function ChecklistPage() {
     { value: 'draft', label: 'Draft', icon: FileEdit, color: 'gray' },
     { value: 'in_progress', label: 'In Progress', icon: Clock, color: 'yellow' },
     { value: 'completed', label: 'Completed', icon: CheckCircle, color: 'green' },
+  ];
+
+  // Build combined attachment list for gallery display
+  const displayAttachments = [
+    ...serverAttachments.map((att) => ({
+      id: att.id,
+      name: att.original_name,
+      url: att.storage_path,
+      type: att.mime_type,
+      size: att.size_bytes,
+      isServer: true,
+    })),
+    ...pendingFiles.map((file) => ({
+      name: file.name,
+      url: URL.createObjectURL(file),
+      type: file.type,
+      size: file.size,
+      isServer: false,
+    })),
   ];
 
   return (
@@ -295,12 +324,11 @@ export default function ChecklistPage() {
         <AttachmentUpload onFileUpload={handleFileUpload} />
       </DocumentsSection>
 
-      {formData.attachments.length > 0 && (
+      {displayAttachments.length > 0 && (
         <div className="bg-white rounded-lg shadow p-3 sm:p-4 mb-3 sm:mb-4">
           <AttachmentGallery
-            attachments={formData.attachments}
+            attachments={displayAttachments}
             onRemove={handleRemoveAttachment}
-            onRename={handleRenameAttachment}
           />
         </div>
       )}

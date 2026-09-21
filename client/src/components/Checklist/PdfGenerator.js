@@ -2,27 +2,58 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 /**
  * Corrects image orientation by drawing through a canvas.
+ * Accepts a data URL or an object URL.
  */
-async function correctImageOrientation(dataUrl) {
+async function correctImageOrientation(imageUrl) {
   return new Promise((resolve) => {
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL('image/jpeg', 0.92));
+      canvas.toBlob(
+        (blob) => resolve(blob),
+        'image/jpeg',
+        0.92
+      );
     };
-    img.src = dataUrl;
+    img.onerror = () => resolve(null);
+    img.src = imageUrl;
   });
+}
+
+/**
+ * Fetch attachment bytes — supports both R2 URLs and legacy base64 data URIs.
+ */
+async function getAttachmentBytes(attachment) {
+  // Legacy base64 data URI (from old form_data)
+  if (attachment.data && attachment.data.startsWith('data:')) {
+    const base64Data = attachment.data.split(',')[1];
+    return Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+  }
+
+  // R2 URL (or any URL)
+  if (attachment.url || attachment.storage_path) {
+    const url = attachment.url || attachment.storage_path;
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    return new Uint8Array(arrayBuffer);
+  }
+
+  return null;
 }
 
 /**
  * Generates a filled PRC PDF from form data.
  * Returns { blob, filename }.
+ *
+ * @param {Object} formData - The checklist form data
+ * @param {Array} serverAttachments - R2 attachments from server (optional)
  */
-export async function generatePRC(formData) {
+export async function generatePRC(formData, serverAttachments = []) {
   const response = await fetch('/KW_Maine_Public_Records_Checklist.pdf');
   const pdfBytes = await response.arrayBuffer();
   const pdfDoc = await PDFDocument.load(pdfBytes);
@@ -48,7 +79,7 @@ export async function generatePRC(formData) {
     }
   };
 
-  // Fill form fields - exact same field names as v3
+  // Fill form fields
   setValue('Property Address', formData.propertyAddress);
 
   setCheckbox('Homestead', formData.homesteadExemption);
@@ -63,7 +94,6 @@ export async function generatePRC(formData) {
   setCheckbox('undefined', formData.propertyDataCard);
   setCheckbox('undefined_2', formData.taxMap);
 
-  // Date formatting
   const dateValue = formData.dateVisited;
   const formattedDate = dateValue
     ? new Date(dateValue + 'T00:00:00').toLocaleDateString('en-US')
@@ -110,23 +140,52 @@ export async function generatePRC(formData) {
 
   setValue('4 COMPLETED BY', formData.completedBy);
 
-  // Embed attachments as pages
-  for (let i = 0; i < formData.attachments.length; i++) {
-    const attachment = formData.attachments[i];
-    try {
-      if (attachment.type.startsWith('image/')) {
-        const correctedDataUrl = await correctImageOrientation(attachment.data);
-        const base64Data = correctedDataUrl.split(',')[1];
-        const fileBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+  // Build attachment list: prefer server attachments (R2), fall back to legacy base64
+  const attachments =
+    serverAttachments.length > 0
+      ? serverAttachments.map((att) => ({
+          name: att.original_name || att.name,
+          url: att.storage_path || att.url,
+          type: att.mime_type || att.type,
+        }))
+      : (formData.attachments || []);
 
-        const image = await pdfDoc.embedJpg(fileBytes);
+  // Embed attachments as pages
+  for (let i = 0; i < attachments.length; i++) {
+    const attachment = attachments[i];
+    try {
+      const mimeType = attachment.type || attachment.mime_type || '';
+
+      if (mimeType.startsWith('image/')) {
+        // Get image bytes — fetch from URL or decode base64
+        let imageBytes;
+        const imageUrl = attachment.url || attachment.storage_path;
+
+        if (imageUrl && !imageUrl.startsWith('data:')) {
+          // Fetch from R2 URL, correct orientation via canvas
+          const correctedBlob = await correctImageOrientation(imageUrl);
+          if (!correctedBlob) {
+            console.warn('Failed to load image:', attachment.name);
+            continue;
+          }
+          imageBytes = new Uint8Array(await correctedBlob.arrayBuffer());
+        } else if (attachment.data) {
+          // Legacy base64
+          const correctedBlob = await correctImageOrientation(attachment.data);
+          if (!correctedBlob) continue;
+          imageBytes = new Uint8Array(await correctedBlob.arrayBuffer());
+        } else {
+          continue;
+        }
+
+        const image = await pdfDoc.embedJpg(imageBytes);
         const page = pdfDoc.addPage();
         const pageWidth = page.getWidth();
         const pageHeight = page.getHeight();
         const margin = 50;
 
         // Title
-        page.drawText(`Attachment ${i + 1}: ${attachment.name}`, {
+        page.drawText(`Attachment ${i + 1}: ${attachment.name || 'Image'}`, {
           x: margin,
           y: pageHeight - margin,
           size: 10,
@@ -153,9 +212,9 @@ export async function generatePRC(formData) {
         const y = (pageHeight - drawHeight) / 2 - 15;
 
         page.drawImage(image, { x, y, width: drawWidth, height: drawHeight });
-      } else if (attachment.type === 'application/pdf') {
-        const base64Data = attachment.data.split(',')[1];
-        const fileBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+      } else if (mimeType === 'application/pdf') {
+        const fileBytes = await getAttachmentBytes(attachment);
+        if (!fileBytes) continue;
         const attachedPdf = await PDFDocument.load(fileBytes);
         const copiedPages = await pdfDoc.copyPages(
           attachedPdf,

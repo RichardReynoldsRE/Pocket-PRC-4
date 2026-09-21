@@ -1,24 +1,21 @@
 import { Router } from 'express';
-import { createReadStream } from 'node:fs';
-import { unlink } from 'node:fs/promises';
-import { join } from 'node:path';
 import { query } from '../database.js';
 import { verifyToken } from '../middleware/auth.js';
 import upload from '../middleware/upload.js';
+import { uploadFile, deleteFile, buildKey } from '../lib/r2.js';
 import { createError } from '../utils/errors.js';
 
 const router = Router();
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 
 router.use(verifyToken);
 
-// POST /:checklistId - Upload files
+// POST /:checklistId - Upload files to R2
 router.post('/:checklistId', upload.array('files', 20), async (req, res, next) => {
   try {
     const { checklistId } = req.params;
     const { userId } = req.user;
 
-    // Verify checklist exists and user has access
+    // Verify checklist exists
     const checklist = await query('SELECT * FROM checklists WHERE id = $1', [checklistId]);
     if (checklist.rows.length === 0) {
       throw createError('Checklist not found', 404);
@@ -31,6 +28,9 @@ router.post('/:checklistId', upload.array('files', 20), async (req, res, next) =
     const attachments = [];
 
     for (const file of req.files) {
+      const key = buildKey(checklistId, file.originalname);
+      const { url } = await uploadFile(file.buffer, key, file.mimetype);
+
       const result = await query(
         `INSERT INTO attachments (checklist_id, uploaded_by, filename, original_name, mime_type, size_bytes, storage_path)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -38,11 +38,11 @@ router.post('/:checklistId', upload.array('files', 20), async (req, res, next) =
         [
           checklistId,
           userId,
-          file.filename,
+          key,
           file.originalname,
           file.mimetype,
           file.size,
-          file.path,
+          url,
         ]
       );
       attachments.push(result.rows[0]);
@@ -60,11 +60,10 @@ router.post('/:checklistId', upload.array('files', 20), async (req, res, next) =
   }
 });
 
-// GET /:id/download - Download file
+// GET /:id/download - Redirect to R2 URL
 router.get('/:id/download', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { userId, role } = req.user;
 
     const result = await query(
       `SELECT a.*, c.owner_id, c.team_id, c.assigned_to
@@ -80,36 +79,14 @@ router.get('/:id/download', async (req, res, next) => {
 
     const attachment = result.rows[0];
 
-    // Access check
-    if (role !== 'owner') {
-      if (
-        attachment.owner_id !== userId &&
-        attachment.assigned_to !== userId &&
-        attachment.uploaded_by !== userId
-      ) {
-        throw createError('Access denied', 403);
-      }
-    }
-
-    res.setHeader('Content-Type', attachment.mime_type);
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${attachment.original_name}"`
-    );
-
-    const stream = createReadStream(attachment.storage_path);
-    stream.on('error', () => {
-      if (!res.headersSent) {
-        next(createError('File not found on disk', 404));
-      }
-    });
-    stream.pipe(res);
+    // storage_path now holds the R2 public URL
+    res.redirect(attachment.storage_path);
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /:id - Delete attachment
+// DELETE /:id - Delete from R2 and database
 router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -122,16 +99,16 @@ router.delete('/:id', async (req, res, next) => {
 
     const attachment = result.rows[0];
 
-    // Only uploader or admin can delete
-    if (role !== 'owner' && attachment.uploaded_by !== userId) {
+    // Only uploader or super_admin can delete
+    if (role !== 'super_admin' && attachment.uploaded_by !== userId) {
       throw createError('Access denied', 403);
     }
 
-    // Delete file from disk
+    // Delete from R2 (filename column stores the R2 key)
     try {
-      await unlink(attachment.storage_path);
+      await deleteFile(attachment.filename);
     } catch {
-      // File may already be gone
+      // File may already be gone from R2
     }
 
     await query('DELETE FROM attachments WHERE id = $1', [id]);

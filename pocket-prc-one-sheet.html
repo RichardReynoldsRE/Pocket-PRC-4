@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pocket PRC - One Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @page {
+    size: letter;
+    margin: 0;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    width: 8.5in;
+    height: 11in;
+    margin: 0 auto;
+    background: #fff;
+    color: #1e1e1e;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    overflow: hidden;
+  }
+
+  .page {
+    width: 8.5in;
+    height: 11in;
+    padding: 0.4in 0.5in 0.35in;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.16in;
+    border-bottom: 3px solid #b91c1c;
+    margin-bottom: 0.18in;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-mark {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+  }
+
+  .header-text h1 {
+    font-size: 28px;
+    font-weight: 900;
+    color: #b91c1c;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+
+  .header-text .tagline {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .header-right {
+    text-align: right;
+  }
+
+  .header-right .url {
+    font-size: 14px;
+    font-weight: 700;
+    color: #b91c1c;
+  }
+
+  .header-right .sub {
+    font-size: 10px;
+    color: #9ca3af;
+    margin-top: 2px;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+    border-radius: 12px;
+    padding: 0.2in 0.28in;
+    margin-bottom: 0.18in;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 160px;
+    height: 160px;
+    background: rgba(251, 191, 36, 0.1);
+    border-radius: 50%;
+  }
+
+  .hero h2 {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 6px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero p {
+    font-size: 12.5px;
+    line-height: 1.5;
+    opacity: 0.92;
+    max-width: 90%;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── STATS BAR ─── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 0.18in;
+  }
+
+  .stat {
+    text-align: center;
+    background: #fef9ee;
+    border: 1.5px solid #fde68a;
+    border-radius: 8px;
+    padding: 10px 6px;
+  }
+
+  .stat .number {
+    font-size: 26px;
+    font-weight: 900;
+    color: #b91c1c;
+    line-height: 1;
+  }
+
+  .stat .label {
+    font-size: 9.5px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 3px;
+  }
+
+  /* ─── TWO COLUMN LAYOUT ─── */
+  .columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25in;
+    margin-bottom: 0.18in;
+    flex: 1;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #b91c1c;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .section-title::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: #fbbf24;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ─── PAIN POINTS ─── */
+  .pain-point {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+
+  .pain-icon {
+    width: 20px;
+    height: 20px;
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .pain-icon svg {
+    width: 11px;
+    height: 11px;
+    color: #dc2626;
+  }
+
+  .pain-text {
+    font-size: 11px;
+    line-height: 1.45;
+    color: #374151;
+  }
+
+  .pain-text strong {
+    color: #1e1e1e;
+    font-weight: 700;
+  }
+
+  /* ─── FEATURES ─── */
+  .feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+
+  .feature-icon {
+    width: 20px;
+    height: 20px;
+    background: #dcfce7;
+    border: 1.5px solid #86efac;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .feature-icon svg {
+    width: 11px;
+    height: 11px;
+    color: #16a34a;
+  }
+
+  .feature-text {
+    font-size: 11px;
+    line-height: 1.45;
+    color: #374151;
+  }
+
+  .feature-text strong {
+    color: #1e1e1e;
+    font-weight: 700;
+  }
+
+  /* ─── HOW IT WORKS ─── */
+  .how-it-works {
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 0.18in;
+  }
+
+  .how-it-works .section-title {
+    margin-bottom: 10px;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .step {
+    text-align: center;
+  }
+
+  .step-number {
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, #b91c1c, #991b1b);
+    color: #fff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+    margin-bottom: 5px;
+  }
+
+  .step-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #1e1e1e;
+    margin-bottom: 2px;
+  }
+
+  .step-desc {
+    font-size: 10px;
+    color: #6b7280;
+    line-height: 1.4;
+  }
+
+  /* ─── BOTTOM SECTIONS ─── */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 0.18in;
+  }
+
+  .ecosystem {
+    background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: #fff;
+  }
+
+  .ecosystem h3 {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #fbbf24;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .ecosystem p {
+    font-size: 9.5px;
+    color: #d1d5db;
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+
+  .ecosystem-tools {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .tool-chip {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 3px 8px;
+    font-size: 8.5px;
+    font-weight: 600;
+    color: #e5e7eb;
+    white-space: nowrap;
+  }
+
+  .tool-chip.active {
+    background: #b91c1c;
+    border-color: #dc2626;
+    color: #fff;
+  }
+
+  /* ─── SPONSORSHIP ─── */
+  .sponsorship {
+    background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+    border: 1.5px solid #fde68a;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .sponsorship h3 {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #92400e;
+    margin-bottom: 4px;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .sponsorship h3 svg {
+    width: 14px;
+    height: 14px;
+    color: #f59e0b;
+  }
+
+  .sponsorship p {
+    font-size: 9.5px;
+    color: #78350f;
+    line-height: 1.45;
+    margin-bottom: 8px;
+  }
+
+  .sponsor-logos {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .sponsor-badge {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 8.5px;
+    font-weight: 700;
+    color: #374151;
+    white-space: nowrap;
+  }
+
+  .sponsor-cta {
+    font-size: 9px;
+    font-weight: 700;
+    color: #b91c1c;
+    letter-spacing: 0.3px;
+  }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.14in;
+    border-top: 2px solid #e5e7eb;
+  }
+
+  .footer-contact {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .contact-item svg {
+    width: 13px;
+    height: 13px;
+    color: #b91c1c;
+    flex-shrink: 0;
+  }
+
+  .contact-item span {
+    font-size: 10.5px;
+    color: #374151;
+    font-weight: 500;
+  }
+
+  .footer-cta {
+    background: linear-gradient(135deg, #b91c1c, #991b1b);
+    color: #fff;
+    border-radius: 6px;
+    padding: 8px 18px;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+
+  .footer-cta .small {
+    font-size: 9px;
+    opacity: 0.8;
+    font-weight: 500;
+    margin-top: 1px;
+  }
+
+  @media print {
+    body { margin: 0; }
+    .page { padding: 0.4in 0.5in 0.35in; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <svg class="logo-mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#dc2626"/>
+            <stop offset="100%" stop-color="#991b1b"/>
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+        <rect x="14" y="12" width="36" height="44" rx="4" fill="#fff"/>
+        <rect x="22" y="8" width="20" height="8" rx="3" fill="#7f1d1d"/>
+        <polygon points="32,22 18,34 46,34" fill="#fbbf24"/>
+        <rect x="22" y="34" width="20" height="14" fill="#fbbf24"/>
+        <rect x="29" y="37" width="6" height="11" rx="1" fill="#b91c1c"/>
+        <circle cx="42" cy="48" r="8" fill="#16a34a"/>
+        <polyline points="37,48 40,51 47,44" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="header-text">
+        <h1>Pocket PRC</h1>
+        <div class="tagline">Public Records Checklist</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="url">pocketprc.com</div>
+      <div class="sub">Android, iOS &amp; Web App</div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h2>Complete Your PRC in One Town Hall Visit</h2>
+    <p>The mobile-first app that transforms the Public Records Checklist from a multi-day scramble into a single, seamless on-site experience. Built by agents, for agents.</p>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat">
+      <div class="number">99%</div>
+      <div class="label">Time Saved</div>
+    </div>
+    <div class="stat">
+      <div class="number">1</div>
+      <div class="label">Town Hall Visit</div>
+    </div>
+    <div class="stat">
+      <div class="number">15<span style="font-size:16px">min</span></div>
+      <div class="label">Avg. Completion</div>
+    </div>
+    <div class="stat">
+      <div class="number">100%</div>
+      <div class="label">Mobile Ready</div>
+    </div>
+  </div>
+
+  <!-- TWO COLUMNS -->
+  <div class="columns">
+    <!-- Pain Points -->
+    <div style="display:flex;flex-direction:column;justify-content:space-between;">
+      <div class="section-title">The Problem</div>
+      <div class="pain-point">
+        <div class="pain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+        <div class="pain-text"><strong>3-day deadline pressure</strong> &mdash; every transaction requires a completed PRC within 72 hours of going under contract</div>
+      </div>
+      <div class="pain-point">
+        <div class="pain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+        <div class="pain-text"><strong>2&ndash;3 return trips</strong> to town hall because documents are forgotten or the form can&rsquo;t be completed on-site</div>
+      </div>
+      <div class="pain-point">
+        <div class="pain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+        <div class="pain-text"><strong>Scattered documentation</strong> &mdash; photos, notes, and records spread across devices, compiled manually later</div>
+      </div>
+      <div class="pain-point">
+        <div class="pain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+        <div class="pain-text"><strong>Manual data entry errors</strong> &mdash; handwritten notes transcribed incorrectly lead to compliance issues</div>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div style="display:flex;flex-direction:column;justify-content:space-between;">
+      <div class="section-title">The Solution</div>
+      <div class="feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="feature-text"><strong>Complete on-site</strong> &mdash; fill out your entire PRC right at town hall from your phone</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="feature-text"><strong>Snap &amp; attach</strong> &mdash; photograph documents and records, auto-embedded into your final PDF</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="feature-text"><strong>Professional PDF export</strong> &mdash; generate a polished, filled PRC form ready for submission</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="feature-text"><strong>Team management</strong> &mdash; assign checklists to agents, track status, and manage your team&rsquo;s pipeline</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="feature-text"><strong>Works offline</strong> &mdash; no signal at town hall? No problem. Auto-syncs when you&rsquo;re back online</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-it-works">
+    <div class="section-title">How It Works</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-title">Open &amp; Fill</div>
+        <div class="step-desc">Start a new PRC on your phone. Follow the guided checklist so nothing gets missed.</div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-title">Capture &amp; Attach</div>
+        <div class="step-desc">Snap photos of tax cards, maps, and records. They attach automatically to your PRC.</div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-title">Export &amp; Submit</div>
+        <div class="step-desc">Generate a professional PDF and share it instantly &mdash; done before you leave town hall.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ECOSYSTEM + SPONSORSHIP -->
+  <div class="bottom-row">
+    <div class="ecosystem">
+      <h3>POCKET TOOLS &mdash; Built for Real Estate</h3>
+      <p>Pocket PRC is the first in a suite of mobile-first tools for agents and professionals.</p>
+      <div class="ecosystem-tools">
+        <span class="tool-chip active">Pocket PRC</span>
+        <span class="tool-chip">Post-Showing Review</span>
+        <span class="tool-chip">Listing Appointment</span>
+        <span class="tool-chip">Final Walkthrough</span>
+        <span class="tool-chip">Property Assessment</span>
+        <span class="tool-chip">Broker Price Opinion</span>
+      </div>
+    </div>
+    <div class="sponsorship">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Sponsorship Opportunities</h3>
+      <p>Get your brand in front of real estate agents at the moment of transaction. Sponsors are featured directly inside each Pocket Tool app.</p>
+      <div class="sponsor-logos">
+        <span class="sponsor-badge">Title Companies</span>
+        <span class="sponsor-badge">Lenders</span>
+        <span class="sponsor-badge">Home Inspectors</span>
+      </div>
+      <div class="sponsor-cta">Interested? Let&rsquo;s talk &rarr; richard@homesweetmaine.com</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-contact">
+      <div class="contact-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,4 12,13 2,4"/></svg>
+        <span>richard@homesweetmaine.com</span>
+      </div>
+      <div class="contact-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        <span>(207) 560-4883</span>
+      </div>
+      <div class="contact-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        <span>pocketprc.com</span>
+      </div>
+    </div>
+    <div class="footer-cta">
+      Schedule Your Demo
+      <div class="small">Richard Reynolds &middot; richard@homesweetmaine.com</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

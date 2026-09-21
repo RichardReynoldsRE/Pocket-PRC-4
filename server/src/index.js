@@ -22,6 +22,8 @@ import syncRoutes from './routes/sync.js';
 import brandingRoutes from './routes/branding.js';
 import leadRoutes from './routes/leads.js';
 import rateRequestRoutes from './routes/rateRequest.js';
+import billingRoutes from './routes/billing.js';
+import webhookRoutes from './routes/webhooks.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -42,6 +44,10 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// Stripe webhook needs raw body — MUST be registered BEFORE express.json()
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
 
@@ -55,6 +61,8 @@ app.use('/api/sync', syncRoutes);
 app.use('/api/branding', brandingRoutes);
 app.use('/api/send-lead', leadRoutes);
 app.use('/api/send-rate-request', rateRequestRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // App download - redirects to latest GitHub release APK
 app.get('/api/download/app', (_req, res) => {

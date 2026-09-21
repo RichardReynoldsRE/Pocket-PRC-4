@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pocket PRC — Pricing & Business Plan</title>
+<style>
+  @page { margin: 0.6in; size: letter; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1a1a1a;
+    line-height: 1.5;
+    max-width: 8.5in;
+    margin: 0 auto;
+    padding: 0.6in;
+    background: #fff;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 3px solid #b91c1c;
+  }
+  .header h1 {
+    font-size: 28px;
+    color: #b91c1c;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+  .header .subtitle {
+    font-size: 14px;
+    color: #666;
+  }
+  .header .date {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+  }
+  h2 {
+    font-size: 18px;
+    color: #b91c1c;
+    margin: 20px 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  h3 {
+    font-size: 14px;
+    color: #1a1a1a;
+    margin: 16px 0 6px;
+  }
+
+  /* Tier cards */
+  .tiers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .tier {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px;
+    page-break-inside: avoid;
+  }
+  .tier.featured {
+    border-color: #b91c1c;
+    box-shadow: 0 0 0 1px #b91c1c;
+  }
+  .tier .name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #b91c1c;
+    margin-bottom: 2px;
+  }
+  .tier .price {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  .tier .price span {
+    font-size: 13px;
+    font-weight: 400;
+    color: #666;
+  }
+  .tier .annual {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  .tier ul {
+    list-style: none;
+    padding: 0;
+  }
+  .tier ul li {
+    font-size: 12px;
+    padding: 2px 0;
+    padding-left: 16px;
+    position: relative;
+    color: #333;
+  }
+  .tier ul li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #b91c1c;
+    font-weight: 700;
+  }
+
+  .tier-wide {
+    grid-column: 1 / -1;
+  }
+
+  /* White label section */
+  .wl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 12px;
+    page-break-inside: avoid;
+  }
+  th {
+    background: #f7f7f7;
+    text-align: left;
+    padding: 6px 10px;
+    font-weight: 600;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  td {
+    padding: 5px 10px;
+    border-bottom: 1px solid #eee;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  /* Sections */
+  .policy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 10px 0;
+  }
+  .policy-box {
+    background: #fafafa;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 12px;
+    page-break-inside: avoid;
+  }
+  .policy-box h3 {
+    font-size: 13px;
+    margin: 0 0 6px;
+    color: #b91c1c;
+  }
+  .policy-box ul {
+    padding-left: 16px;
+  }
+  .policy-box li {
+    margin: 3px 0;
+    color: #333;
+  }
+
+  .note {
+    background: #fffbeb;
+    border-left: 3px solid #fbbf24;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #92400e;
+    border-radius: 0 6px 6px 0;
+    margin: 14px 0;
+  }
+
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #999;
+    margin-bottom: 4px;
+  }
+
+  .page-break { page-break-before: always; }
+
+  @media print {
+    body { padding: 0; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Pocket PRC</h1>
+  <div class="subtitle">Pricing & Business Plan</div>
+  <div class="date">March 24, 2026 — Internal Document</div>
+</div>
+
+<!-- SUBSCRIPTION TIERS -->
+<h2>Subscription Tiers</h2>
+
+<div class="tiers">
+  <div class="tier">
+    <div class="name">Solo</div>
+    <div class="price">$10<span>/mo</span></div>
+    <div class="annual">$100/yr (save $20)</div>
+    <ul>
+      <li>1 agent seat</li>
+      <li>3 vendor ad spots (Pocket PRC managed)</li>
+      <li>Full PRC checklist</li>
+      <li>Photo attachments & PDF export</li>
+      <li>Offline sync</li>
+      <li>14-day free trial</li>
+    </ul>
+  </div>
+
+  <div class="tier featured">
+    <div class="name">Team</div>
+    <div class="price">$25<span>/mo base</span></div>
+    <div class="annual">$250/yr base — 3 seats included, +$5/seat ($50/seat annually)</div>
+    <ul>
+      <li>Up to 10 seats</li>
+      <li>First 3 seats included (owner + TC + 1)</li>
+      <li>Roles: owner, transaction coordinator, teammates</li>
+      <li>Team checklist management</li>
+      <li>3 vendor ad spots (Pocket PRC managed)</li>
+      <li>14-day free trial</li>
+    </ul>
+  </div>
+
+  <div class="tier tier-wide">
+    <div class="name">Large Team</div>
+    <div class="price">$50<span>/mo base</span></div>
+    <div class="annual">$500/yr base — 10 seats included, +$3/seat ($30/seat annually) — up to 99 seats</div>
+    <ul style="columns: 2;">
+      <li>First 10 seats included</li>
+      <li>Everything in Team</li>
+      <li>Lower per-seat cost at scale</li>
+      <li>Instant savings at 8+ agents vs Team plan</li>
+      <li>14-day free trial</li>
+      <li>Priority support</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEAT PRICING TABLE -->
+<h3>Seat Pricing Comparison</h3>
+<table>
+  <tr>
+    <th>Seats</th>
+    <th>Team Plan (monthly)</th>
+    <th>Per Seat</th>
+    <th>Large Team (monthly)</th>
+    <th>Per Seat</th>
+  </tr>
+  <tr><td>3</td><td>$25</td><td>$8.33</td><td>—</td><td>—</td></tr>
+  <tr><td>5</td><td>$35</td><td>$7.00</td><td>—</td><td>—</td></tr>
+  <tr><td>8</td><td>$50</td><td>$6.25</td><td>—</td><td>—</td></tr>
+  <tr><td>10</td><td>$60</td><td>$6.00</td><td>$50</td><td>$5.00</td></tr>
+  <tr><td>15</td><td>—</td><td>—</td><td>$65</td><td>$4.33</td></tr>
+  <tr><td>25</td><td>—</td><td>—</td><td>$95</td><td>$3.80</td></tr>
+  <tr><td>50</td><td>—</td><td>—</td><td>$170</td><td>$3.40</td></tr>
+  <tr><td>99</td><td>—</td><td>—</td><td>$317</td><td>$3.20</td></tr>
+</table>
+
+<!-- WHITE LABEL TIERS -->
+<h2>White Label Tiers</h2>
+
+<div class="wl-grid">
+  <div class="tier">
+    <div class="name">Team White Label</div>
+    <div class="price">$2,500<span>/yr</span></div>
+    <div class="annual">+ $1,000 one-time setup</div>
+    <ul>
+      <li>10–99 agents</li>
+      <li>Custom branding within the main Pocket PRC app</li>
+      <li>Choose and manage their own vendors</li>
+      <li>$500 one-time vendor setup fee (per slot)</li>
+      <li>$250 per vendor change</li>
+      <li>Support via TacoHelp</li>
+      <li>Optional: automated vendor billing add-on</li>
+    </ul>
+  </div>
+
+  <div class="tier featured">
+    <div class="name">Full White Label</div>
+    <div class="price">$5,000<span>/yr</span></div>
+    <div class="annual">+ $2,000 one-time setup</div>
+    <ul>
+      <li>Own standalone app (App Store + Play Store)</li>
+      <li>Unlimited agents (200 included)</li>
+      <li>+$20/agent/yr over 200</li>
+      <li>Full custom branding, icon, app name</li>
+      <li>Choose vendors & charge vendors</li>
+      <li>Super Admin retains support access</li>
+      <li>Support via TacoHelp</li>
+      <li>Optional: automated vendor billing add-on</li>
+    </ul>
+  </div>
+</div>
+
+<!-- VENDOR BILLING -->
+<h2>Vendor Billing Model</h2>
+
+<div class="policy-grid">
+  <div class="policy-box">
+    <h3>Solo / Team / Large Team</h3>
+    <ul>
+      <li>Pocket PRC controls the 3 vendor ad spots</li>
+      <li>Pocket PRC invoices vendors directly via Stripe</li>
+      <li>Revenue goes to Pocket PRC</li>
+    </ul>
+  </div>
+  <div class="policy-box">
+    <h3>White Label — Default</h3>
+    <ul>
+      <li>Client manages which vendors appear in their app</li>
+      <li>Client collects from vendors on their own (outside platform)</li>
+      <li>Pocket PRC charges setup ($500) and change ($250) fees</li>
+    </ul>
+  </div>
+</div>
+
+<div class="policy-box" style="margin-top: 10px;">
+  <h3>White Label — Automated Vendor Billing Add-On (Stripe Connect)</h3>
+  <ul>
+    <li>Client onboards to Stripe Connect as a connected account</li>
+    <li>Client sets their own vendor pricing</li>
+    <li>Vendors pay through the platform automatically</li>
+    <li>Pocket PRC takes a 5–10% platform fee on all vendor payments</li>
+    <li>Client gets a dashboard showing vendor payment status</li>
+    <li>Fully automated recurring billing — no manual invoicing</li>
+  </ul>
+</div>
+
+<!-- PAGE 2 -->
+<div class="page-break"></div>
+
+<div class="header">
+  <h1>Pocket PRC</h1>
+  <div class="subtitle">Policies, Billing & Distribution</div>
+</div>
+
+<!-- PRORATION POLICY -->
+<h2>Proration & Billing Policy</h2>
+
+<table>
+  <tr><th style="width:35%">Scenario</th><th>Policy</th></tr>
+  <tr>
+    <td><strong>Upgrade (tier or seats)</strong></td>
+    <td>Immediate. Prorated charge for remaining billing period.</td>
+  </tr>
+  <tr>
+    <td><strong>Downgrade (tier)</strong></td>
+    <td>Takes effect at end of current billing period. No partial refunds.</td>
+  </tr>
+  <tr>
+    <td><strong>Seat removal</strong></td>
+    <td>Seat stays active until end of billing period, then drops off.</td>
+  </tr>
+  <tr>
+    <td><strong>Annual → Monthly</strong></td>
+    <td>Takes effect at annual renewal date.</td>
+  </tr>
+  <tr>
+    <td><strong>Monthly → Annual</strong></td>
+    <td>Immediate. Prorated credit for remaining monthly period.</td>
+  </tr>
+  <tr>
+    <td><strong>Free trial expiry</strong></td>
+    <td>14-day trial. Non-conversion drops to read-only (data preserved).</td>
+  </tr>
+</table>
+
+<!-- BILLING SYSTEMS -->
+<h2>Billing Infrastructure</h2>
+
+<table>
+  <tr><th>System</th><th>Purpose</th></tr>
+  <tr>
+    <td><strong>Stripe Subscriptions</strong></td>
+    <td>Agent/team subscription billing (all tiers)</td>
+  </tr>
+  <tr>
+    <td><strong>Stripe Invoicing</strong></td>
+    <td>Vendor billing for Solo/Team/Large Team (Pocket PRC collects)</td>
+  </tr>
+  <tr>
+    <td><strong>Stripe Connect</strong></td>
+    <td>Optional add-on — white-label clients collect from their own vendors</td>
+  </tr>
+</table>
+
+<!-- APP DISTRIBUTION -->
+<h2>App Distribution</h2>
+
+<div class="policy-grid">
+  <div class="policy-box">
+    <h3>Google Play Store</h3>
+    <ul>
+      <li>$25 one-time developer account</li>
+      <li>Signed release AAB (Android App Bundle)</li>
+      <li>Currently: Capacitor Android project ready</li>
+      <li>Need: release signing keys, store listing, screenshots</li>
+    </ul>
+  </div>
+  <div class="policy-box">
+    <h3>Apple App Store</h3>
+    <ul>
+      <li>$99/yr Apple Developer Program</li>
+      <li>Requires Mac + Xcode for builds</li>
+      <li>Currently: iOS platform not yet added</li>
+      <li>Need: <code>npx cap add ios</code>, Xcode project setup</li>
+    </ul>
+  </div>
+</div>
+
+<div class="policy-box" style="margin-top: 10px;">
+  <h3>Build Pipeline (Planned)</h3>
+  <ul>
+    <li><strong>Capacitor</strong> — wraps web app as native iOS/Android</li>
+    <li><strong>Fastlane</strong> — automates builds, signing, store submissions</li>
+    <li><strong>GitHub Actions</strong> — CI/CD with macOS runner for iOS builds</li>
+    <li><strong>White-label builds</strong> — automated pipeline swaps app ID, branding, icons, colors per client</li>
+  </ul>
+</div>
+
+<!-- REVENUE STREAMS -->
+<div class="page-break"></div>
+<h2>Revenue Streams</h2>
+
+<table>
+  <tr><th>Stream</th><th>Source</th><th>Notes</th></tr>
+  <tr>
+    <td>Subscriptions</td>
+    <td>Agent/team monthly or annual fees</td>
+    <td>Core recurring revenue</td>
+  </tr>
+  <tr>
+    <td>Vendor ads</td>
+    <td>3 vendor slots (Solo/Team/Large Team)</td>
+    <td>B2B recurring — lenders, title companies, etc.</td>
+  </tr>
+  <tr>
+    <td>White-label annual fees</td>
+    <td>$2,500–$5,000/yr per client</td>
+    <td>High-value contracts</td>
+  </tr>
+  <tr>
+    <td>Setup fees</td>
+    <td>$1,000–$2,000 per white-label client</td>
+    <td>One-time, covers onboarding work</td>
+  </tr>
+  <tr>
+    <td>Vendor config fees</td>
+    <td>$500 setup / $250 change</td>
+    <td>Covers configuration work</td>
+  </tr>
+  <tr>
+    <td>Platform fee</td>
+    <td>5–10% of vendor payments via Stripe Connect</td>
+    <td>Passive revenue on white-label vendor billing</td>
+  </tr>
+  <tr>
+    <td>Per-agent overage</td>
+    <td>$20/agent/yr over 200 (Full White Label)</td>
+    <td>Scales with large brokerages</td>
+  </tr>
+</table>
+
+<div class="note">
+  <strong>Current scope:</strong> PRC checklist is Maine KW-specific. National expansion would require state-specific checklist templates — a future growth opportunity.
+</div>
+
+<div style="text-align: center; margin-top: 40px; font-size: 11px; color: #999;">
+  Pocket PRC — Internal Pricing Plan — March 2026 — Confidential
+</div>
+
+</body>
+</html>
